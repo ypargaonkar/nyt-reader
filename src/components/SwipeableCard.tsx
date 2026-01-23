@@ -49,7 +49,16 @@ export function SwipeableCard({
     const handleTouchStart = (e: TouchEvent) => {
       if (disabled || isAnimating) return;
 
-      startXRef.current = e.touches[0].clientX;
+      const touchX = e.touches[0].clientX;
+      const screenWidth = window.innerWidth;
+      const edgeZone = 50;
+
+      // Don't capture touches near screen edges - let SwipeableSections handle those
+      if (touchX < edgeZone || touchX > screenWidth - edgeZone) {
+        return;
+      }
+
+      startXRef.current = touchX;
       startYRef.current = e.touches[0].clientY;
       currentXRef.current = startXRef.current;
       isHorizontalRef.current = null;
