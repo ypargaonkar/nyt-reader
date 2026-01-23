@@ -5,16 +5,31 @@ import {
   getInteractions,
   getTopProfileEntries,
 } from "@/lib/db";
+import {
+  getProfileEntriesCloud,
+  getLatestAiInsightsCloud,
+  getInteractionsCloud,
+  getTopProfileEntriesCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 import { buildProfileFromEntries } from "@/lib/ai-analyzer";
 
 export async function GET() {
+  const useCloud = isTursoConfigured();
+
   try {
     // Get all profile entries
-    const allEntries = getProfileEntries();
-    const latestInsights = getLatestAiInsights();
+    const allEntries = useCloud
+      ? await getProfileEntriesCloud()
+      : getProfileEntries();
+    const latestInsights = useCloud
+      ? await getLatestAiInsightsCloud()
+      : getLatestAiInsights();
 
     // Count total likes
-    const likedInteractions = getInteractions("liked");
+    const likedInteractions = useCloud
+      ? await getInteractionsCloud("liked")
+      : getInteractions("liked");
     const totalLikes = likedInteractions.length;
 
     // Build profile
@@ -25,16 +40,32 @@ export async function GET() {
     );
 
     // Get top entries for each category
-    const topSections = getTopProfileEntries("section", 10);
-    const topTopics = getTopProfileEntries("topic", 15);
-    const topReporters = getTopProfileEntries("reporter", 10);
-    const topOrganizations = getTopProfileEntries("organization", 10);
-    const topLocations = getTopProfileEntries("location", 10);
-    const topMaterialTypes = getTopProfileEntries("materialType", 10);
+    const topSections = useCloud
+      ? await getTopProfileEntriesCloud("section", 10)
+      : getTopProfileEntries("section", 10);
+    const topTopics = useCloud
+      ? await getTopProfileEntriesCloud("topic", 15)
+      : getTopProfileEntries("topic", 15);
+    const topReporters = useCloud
+      ? await getTopProfileEntriesCloud("reporter", 10)
+      : getTopProfileEntries("reporter", 10);
+    const topOrganizations = useCloud
+      ? await getTopProfileEntriesCloud("organization", 10)
+      : getTopProfileEntries("organization", 10);
+    const topLocations = useCloud
+      ? await getTopProfileEntriesCloud("location", 10)
+      : getTopProfileEntries("location", 10);
+    const topMaterialTypes = useCloud
+      ? await getTopProfileEntriesCloud("materialType", 10)
+      : getTopProfileEntries("materialType", 10);
 
     // Calculate reading stats
-    const readInteractions = getInteractions("read");
-    const dismissedInteractions = getInteractions("dismissed");
+    const readInteractions = useCloud
+      ? await getInteractionsCloud("read")
+      : getInteractions("read");
+    const dismissedInteractions = useCloud
+      ? await getInteractionsCloud("dismissed")
+      : getInteractions("dismissed");
 
     const stats = {
       totalRead: readInteractions.length,

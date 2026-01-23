@@ -6,16 +6,32 @@ import {
   saveCluster,
   clearClusters,
   getCachedArticle,
+  getProfileEntries,
+  getFollowedJournalists,
 } from "@/lib/db";
+import {
+  getAllEmbeddingsCloud,
+  getCachedArticlesCloud,
+  getClustersCloud,
+  saveClusterCloud,
+  clearClustersCloud,
+  getCachedArticleCloud,
+  getProfileEntriesCloud,
+  getFollowedJournalistsCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 import { clusterArticles, generateClusterTitleAndSummary, sortClustersByRelevance } from "@/lib/embeddings";
-import { getProfileEntries, getFollowedJournalists } from "@/lib/db";
 import type { UserProfile } from "@/lib/types";
 import type { Article, StoryCluster } from "@/lib/types";
 
 export async function GET() {
+  const useCloud = isTursoConfigured();
+
   try {
     // Get stored clusters
-    const storedClusters = getClusters();
+    const storedClusters = useCloud
+      ? await getClustersCloud()
+      : getClusters();
 
     if (storedClusters.length === 0) {
       return NextResponse.json({
@@ -25,10 +41,13 @@ export async function GET() {
     }
 
     // Hydrate clusters with full article data
-    let clusters: StoryCluster[] = storedClusters.map((cluster) => {
-      const articles: Article[] = cluster.articleUris
-        .map((uri) => getCachedArticle(uri))
-        .filter((a): a is Article => a !== null);
+    const clustersPromises = storedClusters.map(async (cluster) => {
+      const articlesPromises = cluster.articleUris.map((uri) =>
+        useCloud ? getCachedArticleCloud(uri) : Promise.resolve(getCachedArticle(uri))
+      );
+      const articles = (await Promise.all(articlesPromises)).filter(
+        (a): a is Article => a !== null
+      );
 
       return {
         id: cluster.id,
@@ -42,11 +61,21 @@ export async function GET() {
         },
         updatedAt: cluster.updatedAt,
       };
-    }).filter((c) => c.articles.length >= 2);
+    });
+
+    let clusters: StoryCluster[] = (await Promise.all(clustersPromises)).filter(
+      (c) => c.articles.length >= 2
+    );
 
     // Build user profile for relevance sorting
-    const profileEntries = getProfileEntries();
-    const followedJournalists = new Set(getFollowedJournalists());
+    const profileEntries = useCloud
+      ? await getProfileEntriesCloud()
+      : getProfileEntries();
+    const followedJournalists = new Set(
+      useCloud
+        ? await getFollowedJournalistsCloud()
+        : getFollowedJournalists()
+    );
 
     const profile: UserProfile = {
       sections: {},
@@ -98,12 +127,18 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const useCloud = isTursoConfigured();
+
   try {
     const { openaiApiKey, generateSummaries = false } = await request.json();
 
     // Get all embeddings and articles
-    const embeddingsData = getAllEmbeddings();
-    const articles = getCachedArticles(500);
+    const embeddingsData = useCloud
+      ? await getAllEmbeddingsCloud()
+      : getAllEmbeddings();
+    const articles = useCloud
+      ? await getCachedArticlesCloud(500)
+      : getCachedArticles(500);
 
     if (embeddingsData.length < 10) {
       return NextResponse.json({
@@ -123,7 +158,11 @@ export async function POST(request: NextRequest) {
     const clusters = clusterArticles(articlesWithEmbeddings, embeddings, 0.68);
 
     // Clear old clusters
-    clearClusters();
+    if (useCloud) {
+      await clearClustersCloud();
+    } else {
+      clearClusters();
+    }
 
     // Generate titles and summaries, then save clusters
     for (const cluster of clusters) {
@@ -140,7 +179,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      saveCluster({
+      const clusterData = {
         id: cluster.id,
         title,
         summary,
@@ -148,7 +187,13 @@ export async function POST(request: NextRequest) {
         keywords: cluster.keywords,
         timespanStart: cluster.timespan.start,
         timespanEnd: cluster.timespan.end,
-      });
+      };
+
+      if (useCloud) {
+        await saveClusterCloud(clusterData);
+      } else {
+        saveCluster(clusterData);
+      }
 
       cluster.title = title;
       cluster.summary = summary;

@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSavedArticles, getSavedArticleUris } from "@/lib/db";
+import {
+  getSavedArticlesCloud,
+  getSavedArticleUrisCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 
 export async function GET() {
+  const useCloud = isTursoConfigured();
+
   try {
-    const savedUris = getSavedArticleUris();
-    const articles = getSavedArticles(100);
+    const savedUris = useCloud
+      ? await getSavedArticleUrisCloud()
+      : getSavedArticleUris();
+    const articles = useCloud
+      ? await getSavedArticlesCloud(100)
+      : getSavedArticles(100);
 
     return NextResponse.json({
       savedUris: Array.from(savedUris),

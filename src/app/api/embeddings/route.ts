@@ -5,9 +5,18 @@ import {
   getAllEmbeddings,
   getCachedArticles,
 } from "@/lib/db";
+import {
+  getArticlesWithoutEmbeddingsCloud,
+  saveEmbeddingCloud,
+  getAllEmbeddingsCloud,
+  getCachedArticlesCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 import { generateEmbeddings } from "@/lib/embeddings";
 
 export async function POST(request: NextRequest) {
+  const useCloud = isTursoConfigured();
+
   try {
     const { openaiApiKey } = await request.json();
 
@@ -19,7 +28,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get articles that don't have embeddings yet (process up to 500)
-    const articlesWithoutEmbeddings = getArticlesWithoutEmbeddings(500);
+    const articlesWithoutEmbeddings = useCloud
+      ? await getArticlesWithoutEmbeddingsCloud(500)
+      : getArticlesWithoutEmbeddings(500);
 
     if (articlesWithoutEmbeddings.length === 0) {
       return NextResponse.json({
@@ -34,7 +45,11 @@ export async function POST(request: NextRequest) {
 
     // Save embeddings to database
     for (const [uri, embedding] of embeddings) {
-      saveEmbedding(uri, embedding);
+      if (useCloud) {
+        await saveEmbeddingCloud(uri, embedding);
+      } else {
+        saveEmbedding(uri, embedding);
+      }
     }
 
     return NextResponse.json({
@@ -52,9 +67,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const useCloud = isTursoConfigured();
+
   try {
-    const embeddings = getAllEmbeddings();
-    const articles = getCachedArticles(500);
+    const embeddings = useCloud
+      ? await getAllEmbeddingsCloud()
+      : getAllEmbeddings();
+    const articles = useCloud
+      ? await getCachedArticlesCloud(500)
+      : getCachedArticles(500);
 
     return NextResponse.json({
       embeddingsCount: embeddings.length,

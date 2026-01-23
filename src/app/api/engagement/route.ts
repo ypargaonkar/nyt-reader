@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
 import { getInteractions, getCachedArticle } from "@/lib/db";
+import {
+  getInteractionsCloud,
+  getCachedArticleCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 
 export async function GET() {
+  const useCloud = isTursoConfigured();
+
   try {
     // Get all interactions by type
-    const opened = getInteractions("opened");
-    const liked = getInteractions("liked");
-    const saved = getInteractions("saved");
-    const read = getInteractions("read");
+    const opened = useCloud
+      ? await getInteractionsCloud("opened")
+      : getInteractions("opened");
+    const liked = useCloud
+      ? await getInteractionsCloud("liked")
+      : getInteractions("liked");
+    const saved = useCloud
+      ? await getInteractionsCloud("saved")
+      : getInteractions("saved");
+    const read = useCloud
+      ? await getInteractionsCloud("read")
+      : getInteractions("read");
 
     // Create sets for quick lookup
     const likedUris = new Set(liked.map((i) => i.articleUri));
@@ -72,7 +87,9 @@ export async function GET() {
 
     // Analyze strong positive articles (opened + liked)
     for (const uri of patterns.strongPositive) {
-      const article = getCachedArticle(uri);
+      const article = useCloud
+        ? await getCachedArticleCloud(uri)
+        : getCachedArticle(uri);
       if (article) {
         // Count keywords (already an array)
         for (const kw of article.keywords || []) {
@@ -94,7 +111,9 @@ export async function GET() {
 
     // Analyze weak negative articles (opened but not liked)
     for (const uri of patterns.weakNegative) {
-      const article = getCachedArticle(uri);
+      const article = useCloud
+        ? await getCachedArticleCloud(uri)
+        : getCachedArticle(uri);
       if (article) {
         // Count keywords that didn't convert
         for (const kw of article.keywords || []) {

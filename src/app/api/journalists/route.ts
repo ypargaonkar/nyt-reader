@@ -5,11 +5,22 @@ import {
   isJournalistFollowed,
   getFollowedJournalists,
 } from "@/lib/db";
+import {
+  followJournalistCloud,
+  unfollowJournalistCloud,
+  isJournalistFollowedCloud,
+  getFollowedJournalistsCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 
 // GET - Fetch all followed journalists
 export async function GET() {
+  const useCloud = isTursoConfigured();
+
   try {
-    const journalists = getFollowedJournalists();
+    const journalists = useCloud
+      ? await getFollowedJournalistsCloud()
+      : getFollowedJournalists();
     return NextResponse.json({ journalists });
   } catch (error) {
     console.error("Error fetching followed journalists:", error);
@@ -22,6 +33,8 @@ export async function GET() {
 
 // POST - Follow or unfollow a journalist
 export async function POST(request: NextRequest) {
+  const useCloud = isTursoConfigured();
+
   try {
     const { name, action } = (await request.json()) as {
       name: string;
@@ -47,18 +60,37 @@ export async function POST(request: NextRequest) {
 
     if (action === "toggle") {
       // Toggle follow status
-      if (isJournalistFollowed(cleanName)) {
-        unfollowJournalist(cleanName);
+      const currentlyFollowed = useCloud
+        ? await isJournalistFollowedCloud(cleanName)
+        : isJournalistFollowed(cleanName);
+      if (currentlyFollowed) {
+        if (useCloud) {
+          await unfollowJournalistCloud(cleanName);
+        } else {
+          unfollowJournalist(cleanName);
+        }
         isFollowing = false;
       } else {
-        followJournalist(cleanName);
+        if (useCloud) {
+          await followJournalistCloud(cleanName);
+        } else {
+          followJournalist(cleanName);
+        }
         isFollowing = true;
       }
     } else if (action === "follow") {
-      followJournalist(cleanName);
+      if (useCloud) {
+        await followJournalistCloud(cleanName);
+      } else {
+        followJournalist(cleanName);
+      }
       isFollowing = true;
     } else if (action === "unfollow") {
-      unfollowJournalist(cleanName);
+      if (useCloud) {
+        await unfollowJournalistCloud(cleanName);
+      } else {
+        unfollowJournalist(cleanName);
+      }
       isFollowing = false;
     } else {
       return NextResponse.json(

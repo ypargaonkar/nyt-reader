@@ -1,28 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getInteractions, getCachedArticle } from "@/lib/db";
+import {
+  getInteractionsCloud,
+  getCachedArticleCloud,
+} from "@/lib/db-cloud";
+import { isTursoConfigured } from "@/lib/turso";
 import type { Article, InteractionType } from "@/lib/types";
 
-// Database returns snake_case, so we need this interface
-interface DbInteraction {
-  id: number;
-  article_uri: string;
-  action: string;
-  created_at: string;
-}
-
 export async function GET(request: NextRequest) {
+  const useCloud = isTursoConfigured();
   const searchParams = request.nextUrl.searchParams;
   const type = (searchParams.get("type") || "liked") as InteractionType;
   const limit = parseInt(searchParams.get("limit") || "50");
 
   try {
-    // Get interactions (returns snake_case from SQLite)
-    const interactions = getInteractions(type).slice(0, limit) as unknown as DbInteraction[];
+    // Get interactions
+    const interactions = useCloud
+      ? await getInteractionsCloud(type)
+      : getInteractions(type);
+    const limitedInteractions = interactions.slice(0, limit);
 
     // Fetch article details for each interaction
     const articles: Article[] = [];
-    for (const interaction of interactions) {
-      const article = getCachedArticle(interaction.article_uri);
+    for (const interaction of limitedInteractions) {
+      const article = useCloud
+        ? await getCachedArticleCloud(interaction.articleUri)
+        : getCachedArticle(interaction.articleUri);
       if (article) {
         articles.push(article);
       }
