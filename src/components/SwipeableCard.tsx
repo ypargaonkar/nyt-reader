@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { Heart, X, Bookmark } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Heart, X } from "lucide-react";
 
 interface SwipeableCardProps {
   children: React.ReactNode;
@@ -31,109 +31,141 @@ export function SwipeableCard({
   const [offsetX, setOffsetX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const startXRef = useRef(0);
   const startYRef = useRef(0);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const isHorizontalSwipeRef = useRef<boolean | null>(null);
+  const currentXRef = useRef(0);
+  const isHorizontalRef = useRef<boolean | null>(null);
+  const hasMoved = useRef(false);
 
-  const threshold = 100; // Minimum swipe distance to trigger action
-  const maxSwipe = 150; // Maximum visual swipe distance
+  const threshold = 80;
+  const maxSwipe = 120;
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (disabled || isAnimating) return;
-    startXRef.current = e.touches[0].clientX;
-    startYRef.current = e.touches[0].clientY;
-    isHorizontalSwipeRef.current = null;
-    setIsDragging(true);
-  }, [disabled, isAnimating]);
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging || disabled || isAnimating) return;
+    const handleTouchStart = (e: TouchEvent) => {
+      if (disabled || isAnimating) return;
 
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
-    const diffX = currentX - startXRef.current;
-    const diffY = currentY - startYRef.current;
+      startXRef.current = e.touches[0].clientX;
+      startYRef.current = e.touches[0].clientY;
+      currentXRef.current = startXRef.current;
+      isHorizontalRef.current = null;
+      hasMoved.current = false;
+      setIsDragging(true);
+    };
 
-    // Determine swipe direction on first significant movement
-    if (isHorizontalSwipeRef.current === null) {
-      if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
-        isHorizontalSwipeRef.current = Math.abs(diffX) > Math.abs(diffY);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging || disabled || isAnimating) return;
+
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+      const diffX = touchX - startXRef.current;
+      const diffY = touchY - startYRef.current;
+
+      // Determine direction on first significant movement
+      if (isHorizontalRef.current === null && (Math.abs(diffX) > 8 || Math.abs(diffY) > 8)) {
+        isHorizontalRef.current = Math.abs(diffX) > Math.abs(diffY);
       }
-    }
 
-    // Only handle horizontal swipes
-    if (isHorizontalSwipeRef.current === true) {
-      e.preventDefault();
-      // Apply resistance at edges
-      const resistance = 0.5;
-      const newOffset = Math.max(-maxSwipe, Math.min(maxSwipe, diffX * resistance));
-      setOffsetX(newOffset);
-    }
-  }, [isDragging, disabled, isAnimating]);
+      // Only handle horizontal swipes
+      if (isHorizontalRef.current === true) {
+        e.preventDefault(); // This works with passive: false
+        hasMoved.current = true;
+        currentXRef.current = touchX;
 
-  const handleTouchEnd = useCallback(() => {
-    if (!isDragging) return;
-    setIsDragging(false);
+        const resistance = 0.6;
+        const newOffset = Math.max(-maxSwipe, Math.min(maxSwipe, diffX * resistance));
+        setOffsetX(newOffset);
+      }
+    };
 
-    if (Math.abs(offsetX) >= threshold * 0.5) {
-      // Trigger action
-      setIsAnimating(true);
-      const direction = offsetX > 0 ? 1 : -1;
-      const finalOffset = direction * 400; // Animate off screen
+    const handleTouchEnd = () => {
+      if (!isDragging) return;
+      setIsDragging(false);
 
-      setOffsetX(finalOffset);
+      const finalOffset = offsetX;
 
-      setTimeout(() => {
-        if (direction > 0 && onSwipeRight) {
-          onSwipeRight();
-        } else if (direction < 0 && onSwipeLeft) {
-          onSwipeLeft();
-        }
+      if (Math.abs(finalOffset) >= threshold * 0.6 && hasMoved.current) {
+        // Trigger action
+        setIsAnimating(true);
+        const direction = finalOffset > 0 ? 1 : -1;
+        setOffsetX(direction * 300);
+
+        setTimeout(() => {
+          if (direction > 0 && onSwipeRight) {
+            onSwipeRight();
+          } else if (direction < 0 && onSwipeLeft) {
+            onSwipeLeft();
+          }
+          setOffsetX(0);
+          setIsAnimating(false);
+        }, 150);
+      } else {
         setOffsetX(0);
-        setIsAnimating(false);
-      }, 200);
-    } else {
-      // Snap back
-      setOffsetX(0);
-    }
+      }
 
-    isHorizontalSwipeRef.current = null;
-  }, [isDragging, offsetX, onSwipeLeft, onSwipeRight]);
+      isHorizontalRef.current = null;
+      hasMoved.current = false;
+    };
+
+    // Use passive: false to allow preventDefault on touchmove
+    card.addEventListener("touchstart", handleTouchStart, { passive: true });
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    card.addEventListener("touchend", handleTouchEnd, { passive: true });
+    card.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+
+    return () => {
+      card.removeEventListener("touchstart", handleTouchStart);
+      card.removeEventListener("touchmove", handleTouchMove);
+      card.removeEventListener("touchend", handleTouchEnd);
+      card.removeEventListener("touchcancel", handleTouchEnd);
+    };
+  }, [isDragging, isAnimating, disabled, offsetX, onSwipeLeft, onSwipeRight]);
 
   const progress = Math.min(Math.abs(offsetX) / threshold, 1);
   const isSwipingRight = offsetX > 0;
   const isSwipingLeft = offsetX < 0;
 
+  // Prevent click when swiping
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (hasMoved.current || Math.abs(offsetX) > 5) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, [offsetX]);
+
   return (
-    <div className="relative overflow-hidden rounded-xl md:overflow-visible">
-      {/* Background indicators - only visible on mobile */}
-      <div className="absolute inset-0 flex md:hidden">
-        {/* Right swipe indicator (like) */}
+    <div className="relative overflow-hidden rounded-xl md:rounded-xl">
+      {/* Background indicators - mobile only */}
+      <div className="absolute inset-0 md:hidden pointer-events-none">
+        {/* Right swipe (like) - green */}
         <div
-          className={`absolute inset-y-0 left-0 flex items-center justify-start pl-4 transition-opacity ${rightColor}`}
+          className={`absolute inset-y-0 left-0 flex items-center justify-center ${rightColor}`}
           style={{
-            width: Math.max(0, offsetX),
-            opacity: isSwipingRight ? progress : 0,
+            width: `${Math.max(0, offsetX)}px`,
+            opacity: isSwipingRight ? Math.min(progress * 1.5, 1) : 0,
           }}
         >
-          <div className="flex flex-col items-center text-white">
+          <div className="flex flex-col items-center text-white pl-4">
             {rightIcon}
-            <span className="text-xs font-medium mt-1">{rightLabel}</span>
+            <span className="text-xs font-bold mt-1">{rightLabel}</span>
           </div>
         </div>
 
-        {/* Left swipe indicator (dismiss) */}
+        {/* Left swipe (dismiss) - orange */}
         <div
-          className={`absolute inset-y-0 right-0 flex items-center justify-end pr-4 transition-opacity ${leftColor}`}
+          className={`absolute inset-y-0 right-0 flex items-center justify-center ${leftColor}`}
           style={{
-            width: Math.max(0, -offsetX),
-            opacity: isSwipingLeft ? progress : 0,
+            width: `${Math.max(0, -offsetX)}px`,
+            opacity: isSwipingLeft ? Math.min(progress * 1.5, 1) : 0,
           }}
         >
-          <div className="flex flex-col items-center text-white">
+          <div className="flex flex-col items-center text-white pr-4">
             {leftIcon}
-            <span className="text-xs font-medium mt-1">{leftLabel}</span>
+            <span className="text-xs font-bold mt-1">{leftLabel}</span>
           </div>
         </div>
       </div>
@@ -141,10 +173,8 @@ export function SwipeableCard({
       {/* Card content */}
       <div
         ref={cardRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="relative bg-white dark:bg-gray-900 touch-pan-y"
+        onClick={handleClick}
+        className="relative bg-white dark:bg-gray-900"
         style={{
           transform: `translateX(${offsetX}px)`,
           transition: isDragging ? "none" : "transform 0.2s ease-out",
@@ -152,48 +182,6 @@ export function SwipeableCard({
       >
         {children}
       </div>
-
-      {/* Swipe hint overlay - shows on first few swipes */}
-      {isDragging && Math.abs(offsetX) > 20 && (
-        <div
-          className="absolute inset-0 pointer-events-none flex items-center justify-center md:hidden"
-          style={{ opacity: progress * 0.3 }}
-        >
-          <div className={`px-4 py-2 rounded-full text-white font-medium ${
-            isSwipingRight ? rightColor : leftColor
-          }`}>
-            {isSwipingRight ? rightLabel : leftLabel}
-          </div>
-        </div>
-      )}
     </div>
-  );
-}
-
-// Pre-configured swipe card for articles
-export function SwipeableArticleCard({
-  children,
-  onLike,
-  onDismiss,
-  onSave,
-}: {
-  children: React.ReactNode;
-  onLike: () => void;
-  onDismiss: () => void;
-  onSave?: () => void;
-}) {
-  return (
-    <SwipeableCard
-      onSwipeRight={onLike}
-      onSwipeLeft={onDismiss}
-      rightLabel="Like"
-      leftLabel="Dismiss"
-      rightIcon={<Heart className="w-6 h-6" />}
-      leftIcon={<X className="w-6 h-6" />}
-      rightColor="bg-green-500"
-      leftColor="bg-orange-500"
-    >
-      {children}
-    </SwipeableCard>
   );
 }
