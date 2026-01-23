@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FeedSection } from "@/lib/types";
 
-// Section order for navigation
 const sectionOrder: FeedSection[] = [
   "home",
   "for-you",
@@ -52,158 +51,121 @@ export function SwipeableSections({
   currentSection,
   onSectionChange,
 }: SwipeableSectionsProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
+  const [indicator, setIndicator] = useState<{
+    direction: "left" | "right";
+    section: FeedSection;
+    progress: number;
+  } | null>(null);
 
-  const startXRef = useRef(0);
-  const startYRef = useRef(0);
-  const isHorizontalRef = useRef<boolean | null>(null);
-  const isEdgeSwipeRef = useRef(false);
-
-  const edgeThreshold = 30; // Pixels from edge to start swipe
-  const swipeThreshold = 80; // Minimum swipe to change section
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const isTracking = useRef(false);
+  const direction = useRef<"horizontal" | "vertical" | null>(null);
 
   const currentIndex = sectionOrder.indexOf(currentSection);
   const prevSection = currentIndex > 0 ? sectionOrder[currentIndex - 1] : null;
   const nextSection = currentIndex < sectionOrder.length - 1 ? sectionOrder[currentIndex + 1] : null;
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
     const handleTouchStart = (e: TouchEvent) => {
-      const touchX = e.touches[0].clientX;
-      const touchY = e.touches[0].clientY;
+      const touch = e.touches[0];
       const screenWidth = window.innerWidth;
 
-      // Only activate on edge swipes
-      const isLeftEdge = touchX < edgeThreshold;
-      const isRightEdge = touchX > screenWidth - edgeThreshold;
+      // Only start tracking if touch begins near edges (50px zone)
+      const edgeZone = 50;
+      const isNearLeftEdge = touch.clientX < edgeZone;
+      const isNearRightEdge = touch.clientX > screenWidth - edgeZone;
 
-      if (!isLeftEdge && !isRightEdge) {
-        isEdgeSwipeRef.current = false;
-        return;
+      if (isNearLeftEdge || isNearRightEdge) {
+        startX.current = touch.clientX;
+        startY.current = touch.clientY;
+        isTracking.current = true;
+        direction.current = null;
       }
-
-      isEdgeSwipeRef.current = true;
-      startXRef.current = touchX;
-      startYRef.current = touchY;
-      isHorizontalRef.current = null;
-      setIsDragging(true);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging || !isEdgeSwipeRef.current) return;
+      if (!isTracking.current) return;
 
-      const touchX = e.touches[0].clientX;
-      const touchY = e.touches[0].clientY;
-      const diffX = touchX - startXRef.current;
-      const diffY = touchY - startYRef.current;
+      const touch = e.touches[0];
+      const diffX = touch.clientX - startX.current;
+      const diffY = touch.clientY - startY.current;
 
-      // Determine direction
-      if (isHorizontalRef.current === null && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
-        isHorizontalRef.current = Math.abs(diffX) > Math.abs(diffY);
+      // Determine direction on first significant movement
+      if (direction.current === null && (Math.abs(diffX) > 15 || Math.abs(diffY) > 15)) {
+        direction.current = Math.abs(diffX) > Math.abs(diffY) ? "horizontal" : "vertical";
       }
 
-      if (isHorizontalRef.current === true) {
+      // Only handle horizontal swipes
+      if (direction.current === "horizontal") {
         e.preventDefault();
 
-        // Determine swipe direction and limit
-        if (diffX > 0 && prevSection) {
-          setSwipeDirection("right");
-          setSwipeOffset(Math.min(diffX * 0.4, 100));
-        } else if (diffX < 0 && nextSection) {
-          setSwipeDirection("left");
-          setSwipeOffset(Math.max(diffX * 0.4, -100));
+        const progress = Math.min(Math.abs(diffX) / 100, 1);
+
+        if (diffX > 20 && prevSection) {
+          setIndicator({ direction: "right", section: prevSection, progress });
+        } else if (diffX < -20 && nextSection) {
+          setIndicator({ direction: "left", section: nextSection, progress });
         } else {
-          setSwipeOffset(diffX * 0.1); // Resistance when no section available
+          setIndicator(null);
         }
       }
     };
 
     const handleTouchEnd = () => {
-      if (!isDragging || !isEdgeSwipeRef.current) return;
+      if (!isTracking.current) return;
 
-      setIsDragging(false);
-
-      if (Math.abs(swipeOffset) >= swipeThreshold * 0.5) {
-        // Change section
-        if (swipeOffset > 0 && prevSection) {
-          onSectionChange(prevSection);
-        } else if (swipeOffset < 0 && nextSection) {
-          onSectionChange(nextSection);
-        }
+      if (indicator && indicator.progress > 0.5) {
+        onSectionChange(indicator.section);
       }
 
-      // Reset
-      setSwipeOffset(0);
-      setSwipeDirection(null);
-      isEdgeSwipeRef.current = false;
-      isHorizontalRef.current = null;
+      isTracking.current = false;
+      direction.current = null;
+      setIndicator(null);
     };
 
-    container.addEventListener("touchstart", handleTouchStart, { passive: true });
-    container.addEventListener("touchmove", handleTouchMove, { passive: false });
-    container.addEventListener("touchend", handleTouchEnd, { passive: true });
-    container.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+    document.addEventListener("touchstart", handleTouchStart, { passive: true });
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd, { passive: true });
+    document.addEventListener("touchcancel", handleTouchEnd, { passive: true });
 
     return () => {
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
-      container.removeEventListener("touchend", handleTouchEnd);
-      container.removeEventListener("touchcancel", handleTouchEnd);
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [isDragging, swipeOffset, prevSection, nextSection, onSectionChange]);
-
-  const progress = Math.min(Math.abs(swipeOffset) / swipeThreshold, 1);
+  }, [indicator, prevSection, nextSection, onSectionChange]);
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Left edge indicator (swipe right for previous) */}
-      {prevSection && (
+    <div className="relative">
+      {/* Section change indicator */}
+      {indicator && (
         <div
-          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 flex items-center md:hidden pointer-events-none"
+          className={`fixed top-1/2 -translate-y-1/2 z-50 md:hidden transition-transform ${
+            indicator.direction === "right" ? "left-0" : "right-0"
+          }`}
           style={{
-            opacity: swipeDirection === "right" ? progress : 0,
-            transform: `translateX(${swipeDirection === "right" ? swipeOffset * 0.5 : -20}px) translateY(-50%)`,
-            transition: isDragging ? "none" : "all 0.2s ease-out",
+            transform: `translateY(-50%) translateX(${
+              indicator.direction === "right"
+                ? `${-100 + indicator.progress * 100}%`
+                : `${100 - indicator.progress * 100}%`
+            })`,
           }}
         >
-          <div className="bg-blue-500 text-white px-3 py-4 rounded-r-xl shadow-lg flex items-center gap-2">
-            <ChevronLeft className="w-5 h-5" />
-            <span className="text-sm font-medium">{sectionLabels[prevSection]}</span>
+          <div
+            className={`bg-blue-600 text-white px-4 py-3 shadow-xl flex items-center gap-2 ${
+              indicator.direction === "right" ? "rounded-r-2xl" : "rounded-l-2xl"
+            }`}
+          >
+            {indicator.direction === "right" && <ChevronLeft className="w-5 h-5" />}
+            <span className="font-semibold text-sm">{sectionLabels[indicator.section]}</span>
+            {indicator.direction === "left" && <ChevronRight className="w-5 h-5" />}
           </div>
         </div>
       )}
 
-      {/* Right edge indicator (swipe left for next) */}
-      {nextSection && (
-        <div
-          className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center md:hidden pointer-events-none"
-          style={{
-            opacity: swipeDirection === "left" ? progress : 0,
-            transform: `translateX(${swipeDirection === "left" ? swipeOffset * 0.5 : 20}px) translateY(-50%)`,
-            transition: isDragging ? "none" : "all 0.2s ease-out",
-          }}
-        >
-          <div className="bg-blue-500 text-white px-3 py-4 rounded-l-xl shadow-lg flex items-center gap-2">
-            <span className="text-sm font-medium">{sectionLabels[nextSection]}</span>
-            <ChevronRight className="w-5 h-5" />
-          </div>
-        </div>
-      )}
-
-      {/* Content with subtle transform during swipe */}
-      <div
-        style={{
-          transform: `translateX(${swipeOffset * 0.1}px)`,
-          transition: isDragging ? "none" : "transform 0.2s ease-out",
-        }}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
