@@ -176,20 +176,21 @@ function ActionButtons({
   const [liked, setLiked] = useState(isLiked);
   const [saved, setSaved] = useState(isSaved);
 
+  // Mobile-friendly touch targets (min 44px)
   const buttonSize = {
-    sm: "p-1.5",
-    md: "p-2",
-    lg: "p-2.5",
+    sm: "p-2 md:p-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
+    md: "p-2.5 md:p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
+    lg: "p-3 md:p-2.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
   }[size];
 
   const iconSize = {
-    sm: "w-3.5 h-3.5",
-    md: "w-4 h-4",
-    lg: "w-5 h-5",
+    sm: "w-4 h-4 md:w-3.5 md:h-3.5",
+    md: "w-5 h-5 md:w-4 md:h-4",
+    lg: "w-6 h-6 md:w-5 md:h-5",
   }[size];
 
   return (
-    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+    <div className="flex items-center gap-1 md:gap-1" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => {
           setLiked(!liked);
@@ -197,7 +198,7 @@ function ActionButtons({
         }}
         className={cn(
           buttonSize,
-          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95",
+          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
           liked
             ? "bg-red-100 dark:bg-red-900/50 text-red-500"
             : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-red-500"
@@ -212,7 +213,7 @@ function ActionButtons({
         }}
         className={cn(
           buttonSize,
-          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95",
+          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
           saved
             ? "bg-blue-100 dark:bg-blue-900/50 text-blue-500"
             : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-blue-500"
@@ -224,7 +225,7 @@ function ActionButtons({
         onClick={onRead}
         className={cn(
           buttonSize,
-          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95",
+          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
           "hover:bg-green-100 dark:hover:bg-green-900/50 text-gray-500 hover:text-green-500"
         )}
       >

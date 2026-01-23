@@ -58,10 +58,10 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                 size="icon"
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className="h-9 w-9"
+                className="h-11 w-11 touch-manipulation"
               >
                 <RefreshCw
-                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                  className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
                 />
               </Button>
 
@@ -70,20 +70,20 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                 variant="ghost"
                 size="icon"
                 onClick={toggleDarkMode}
-                className="h-9 w-9"
+                className="h-11 w-11 touch-manipulation"
               >
                 {settings.darkMode ? (
-                  <Sun className="h-4 w-4" />
+                  <Sun className="h-5 w-5" />
                 ) : (
-                  <Moon className="h-4 w-4" />
+                  <Moon className="h-5 w-5" />
                 )}
               </Button>
 
-              {/* Menu */}
+              {/* Menu - hidden on mobile, shown on desktop */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <User className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" className="h-11 w-11 hidden md:flex touch-manipulation">
+                    <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">

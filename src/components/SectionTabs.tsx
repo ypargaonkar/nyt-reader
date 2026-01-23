@@ -60,15 +60,15 @@ export function SectionTabs({
             value={currentSection}
             onValueChange={(value) => onSectionChange(value as FeedSection)}
           >
-            <TabsList className="h-12 bg-transparent border-0 p-0 gap-1">
+            <TabsList className="h-12 md:h-12 bg-transparent border-0 p-0 gap-1">
               {sections.map((section) => (
                 <TabsTrigger
                   key={section.id}
                   value={section.id}
-                  className="flex items-center gap-1.5 px-3 py-2 h-10 data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-lg font-medium"
+                  className="flex items-center gap-1.5 px-3 md:px-3 py-2 min-h-[44px] md:h-10 data-[state=active]:bg-gray-100 dark:data-[state=active]:bg-gray-800 rounded-lg font-medium touch-manipulation"
                 >
                   {section.icon}
-                  <span>{section.label}</span>
+                  <span className="text-sm md:text-base">{section.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

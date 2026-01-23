@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { SectionTabs } from "@/components/SectionTabs";
 import { Feed } from "@/components/Feed";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { useAppStore } from "@/lib/store";
 import type { FeedSection } from "@/lib/types";
 
 export default function Home() {
+  const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -133,22 +137,40 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleRefresh]);
 
+  // Navigate to profile page
+  const handleProfileClick = () => {
+    router.push("/profile");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header onRefresh={handleRefresh} isRefreshing={isRefreshing} />
-      <SectionTabs
+
+      {/* Desktop: Show full section tabs, Mobile: Show condensed tabs */}
+      <div className="md:block">
+        <SectionTabs
+          currentSection={currentSection}
+          onSectionChange={handleSectionChange}
+        />
+      </div>
+
+      <PullToRefresh onRefresh={handleRefresh} disabled={isRefreshing}>
+        <main className="w-full px-4 md:px-8 lg:px-12 py-6 pb-bottom-nav md:pb-6">
+          <Feed onOpenSettings={() => setSettingsOpen(true)} />
+        </main>
+      </PullToRefresh>
+
+      {/* Mobile bottom navigation */}
+      <MobileBottomNav
         currentSection={currentSection}
         onSectionChange={handleSectionChange}
+        onProfileClick={handleProfileClick}
       />
-
-      <main className="w-full px-4 md:px-8 lg:px-12 py-6">
-        <Feed onOpenSettings={() => setSettingsOpen(true)} />
-      </main>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
 
-      {/* Keyboard shortcuts hint */}
+      {/* Keyboard shortcuts hint - hidden on mobile */}
       <div className="fixed bottom-4 right-4 text-xs text-gray-400 dark:text-gray-600 hidden md:block">
         <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">j</kbd>/<kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">k</kbd> Navigate
         <span className="mx-2">|</span>
