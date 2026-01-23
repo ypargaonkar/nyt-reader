@@ -3,113 +3,131 @@ import path from "path";
 import fs from "fs";
 import type { Article, Interaction, ProfileEntry, InteractionType } from "./types";
 
+// Check if we're in a serverless environment (Vercel)
+const IS_SERVERLESS = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
 // Database file location
 const DB_PATH = path.join(process.cwd(), "data", "reader.db");
 
 // Lazy database initialization
 let db: DatabaseType | null = null;
+let dbInitFailed = false;
 
-function getDb(): DatabaseType {
+function getDb(): DatabaseType | null {
+  if (dbInitFailed) return null;
   if (db) return db;
 
-  // Ensure data directory exists
-  const dataDir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  // Skip DB initialization on serverless platforms
+  if (IS_SERVERLESS) {
+    dbInitFailed = true;
+    return null;
   }
 
-  // Create database connection
-  db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.pragma("busy_timeout = 5000");
+  try {
+    // Ensure data directory exists
+    const dataDir = path.dirname(DB_PATH);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
 
-  // Initialize schema
-  db.exec(`
-    -- Articles cache
-    CREATE TABLE IF NOT EXISTS articles (
-      uri TEXT PRIMARY KEY,
-      data TEXT NOT NULL,
-      fetched_at TEXT NOT NULL,
-      section TEXT,
-      byline TEXT
-    );
+    // Create database connection
+    db = new Database(DB_PATH);
+    db.pragma("journal_mode = WAL");
+    db.pragma("busy_timeout = 5000");
 
-    -- User interactions
-    CREATE TABLE IF NOT EXISTS interactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      article_uri TEXT NOT NULL,
-      action TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    );
+    // Initialize schema
+    db.exec(`
+      -- Articles cache
+      CREATE TABLE IF NOT EXISTS articles (
+        uri TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        fetched_at TEXT NOT NULL,
+        section TEXT,
+        byline TEXT
+      );
 
-    -- Create index for faster lookups
-    CREATE INDEX IF NOT EXISTS idx_interactions_uri ON interactions(article_uri);
-    CREATE INDEX IF NOT EXISTS idx_interactions_action ON interactions(action);
+      -- User interactions
+      CREATE TABLE IF NOT EXISTS interactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        article_uri TEXT NOT NULL,
+        action TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
 
-    -- Preference profile
-    CREATE TABLE IF NOT EXISTS profile (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category TEXT NOT NULL,
-      value TEXT NOT NULL,
-      score REAL NOT NULL DEFAULT 0,
-      updated_at TEXT NOT NULL,
-      UNIQUE(category, value)
-    );
+      -- Create index for faster lookups
+      CREATE INDEX IF NOT EXISTS idx_interactions_uri ON interactions(article_uri);
+      CREATE INDEX IF NOT EXISTS idx_interactions_action ON interactions(action);
 
-    -- AI analysis results
-    CREATE TABLE IF NOT EXISTS ai_analysis (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      insights TEXT,
-      analyzed_at TEXT NOT NULL,
-      articles_analyzed INTEGER DEFAULT 0
-    );
+      -- Preference profile
+      CREATE TABLE IF NOT EXISTS profile (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL,
+        value TEXT NOT NULL,
+        score REAL NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        UNIQUE(category, value)
+      );
 
-    -- API usage tracking
-    CREATE TABLE IF NOT EXISTS api_calls (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      endpoint TEXT NOT NULL,
-      called_at TEXT NOT NULL
-    );
+      -- AI analysis results
+      CREATE TABLE IF NOT EXISTS ai_analysis (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        insights TEXT,
+        analyzed_at TEXT NOT NULL,
+        articles_analyzed INTEGER DEFAULT 0
+      );
 
-    -- Create index for date-based queries
-    CREATE INDEX IF NOT EXISTS idx_api_calls_date ON api_calls(called_at);
+      -- API usage tracking
+      CREATE TABLE IF NOT EXISTS api_calls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        endpoint TEXT NOT NULL,
+        called_at TEXT NOT NULL
+      );
 
-    -- Followed journalists
-    CREATE TABLE IF NOT EXISTS followed_journalists (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      followed_at TEXT NOT NULL
-    );
+      -- Create index for date-based queries
+      CREATE INDEX IF NOT EXISTS idx_api_calls_date ON api_calls(called_at);
 
-    -- Create index for journalist lookups
-    CREATE INDEX IF NOT EXISTS idx_followed_journalists_name ON followed_journalists(name);
+      -- Followed journalists
+      CREATE TABLE IF NOT EXISTS followed_journalists (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        followed_at TEXT NOT NULL
+      );
 
-    -- Article embeddings for semantic clustering
-    CREATE TABLE IF NOT EXISTS embeddings (
-      uri TEXT PRIMARY KEY,
-      embedding TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    );
+      -- Create index for journalist lookups
+      CREATE INDEX IF NOT EXISTS idx_followed_journalists_name ON followed_journalists(name);
 
-    -- Story clusters
-    CREATE TABLE IF NOT EXISTS clusters (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      summary TEXT,
-      article_uris TEXT NOT NULL,
-      keywords TEXT,
-      timespan_start TEXT,
-      timespan_end TEXT,
-      updated_at TEXT NOT NULL
-    );
-  `);
+      -- Article embeddings for semantic clustering
+      CREATE TABLE IF NOT EXISTS embeddings (
+        uri TEXT PRIMARY KEY,
+        embedding TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
 
-  return db;
+      -- Story clusters
+      CREATE TABLE IF NOT EXISTS clusters (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        summary TEXT,
+        article_uris TEXT NOT NULL,
+        keywords TEXT,
+        timespan_start TEXT,
+        timespan_end TEXT,
+        updated_at TEXT NOT NULL
+      );
+    `);
+
+    return db;
+  } catch (error) {
+    console.warn("Database initialization failed (serverless environment?):", error);
+    dbInitFailed = true;
+    return null;
+  }
 }
 
 // Article operations
 export function cacheArticle(article: Article): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT OR REPLACE INTO articles (uri, data, fetched_at, section, byline)
     VALUES (?, ?, ?, ?, ?)
@@ -125,6 +143,7 @@ export function cacheArticle(article: Article): void {
 
 export function cacheArticles(articles: Article[]): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT OR REPLACE INTO articles (uri, data, fetched_at, section, byline)
     VALUES (?, ?, ?, ?, ?)
@@ -145,6 +164,7 @@ export function cacheArticles(articles: Article[]): void {
 
 export function getCachedArticle(uri: string): Article | null {
   const database = getDb();
+  if (!database) return null;
   const stmt = database.prepare("SELECT data FROM articles WHERE uri = ?");
   const row = stmt.get(uri) as { data: string } | undefined;
   return row ? JSON.parse(row.data) : null;
@@ -152,6 +172,7 @@ export function getCachedArticle(uri: string): Article | null {
 
 export function getCachedArticles(limit: number = 100): Article[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare(`
     SELECT data FROM articles
     ORDER BY fetched_at DESC
@@ -167,6 +188,7 @@ export function recordInteraction(
   action: InteractionType
 ): void {
   const database = getDb();
+  if (!database) return;
   // Check if already has this interaction
   const existing = database
     .prepare(
@@ -185,6 +207,7 @@ export function recordInteraction(
 
 export function getInteractions(action?: InteractionType): Interaction[] {
   const database = getDb();
+  if (!database) return [];
   let query = "SELECT * FROM interactions";
   if (action) {
     query += " WHERE action = ?";
@@ -198,6 +221,7 @@ export function getInteractions(action?: InteractionType): Interaction[] {
 
 export function getReadArticleUris(): Set<string> {
   const database = getDb();
+  if (!database) return new Set();
   const stmt = database.prepare(
     "SELECT DISTINCT article_uri FROM interactions WHERE action IN ('read', 'dismissed')"
   );
@@ -207,6 +231,7 @@ export function getReadArticleUris(): Set<string> {
 
 export function getLikedArticleUris(): Set<string> {
   const database = getDb();
+  if (!database) return new Set();
   const stmt = database.prepare(
     "SELECT DISTINCT article_uri FROM interactions WHERE action = 'liked'"
   );
@@ -216,6 +241,7 @@ export function getLikedArticleUris(): Set<string> {
 
 export function getSavedArticleUris(): Set<string> {
   const database = getDb();
+  if (!database) return new Set();
   const stmt = database.prepare(
     "SELECT DISTINCT article_uri FROM interactions WHERE action = 'saved'"
   );
@@ -225,6 +251,7 @@ export function getSavedArticleUris(): Set<string> {
 
 export function getSavedArticles(limit: number = 100): Article[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare(`
     SELECT a.data
     FROM articles a
@@ -239,6 +266,7 @@ export function getSavedArticles(limit: number = 100): Article[] {
 
 export function isArticleSaved(uri: string): boolean {
   const database = getDb();
+  if (!database) return false;
   const stmt = database.prepare(
     "SELECT id FROM interactions WHERE article_uri = ? AND action = 'saved'"
   );
@@ -248,6 +276,7 @@ export function isArticleSaved(uri: string): boolean {
 
 export function unsaveArticle(uri: string): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(
     "DELETE FROM interactions WHERE article_uri = ? AND action = 'saved'"
   );
@@ -256,6 +285,7 @@ export function unsaveArticle(uri: string): void {
 
 export function getLikedArticles(limit: number = 50): Article[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare(`
     SELECT a.data
     FROM articles a
@@ -270,6 +300,7 @@ export function getLikedArticles(limit: number = 50): Article[] {
 
 export function getUnanalyzedLikedCount(): number {
   const database = getDb();
+  if (!database) return 0;
   const lastAnalysis = database
     .prepare("SELECT analyzed_at FROM ai_analysis ORDER BY analyzed_at DESC LIMIT 1")
     .get() as { analyzed_at: string } | undefined;
@@ -296,6 +327,7 @@ export function updateProfileScore(
   scoreIncrement: number
 ): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT INTO profile (category, value, score, updated_at)
     VALUES (?, ?, ?, ?)
@@ -308,6 +340,7 @@ export function updateProfileScore(
 
 export function getProfileEntries(category?: string): ProfileEntry[] {
   const database = getDb();
+  if (!database) return [];
   let query = "SELECT * FROM profile";
   if (category) {
     query += " WHERE category = ?";
@@ -324,6 +357,7 @@ export function getTopProfileEntries(
   limit: number = 10
 ): ProfileEntry[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare(`
     SELECT * FROM profile
     WHERE category = ?
@@ -336,6 +370,7 @@ export function getTopProfileEntries(
 // AI analysis operations
 export function saveAiInsights(insights: string, articlesAnalyzed: number): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT INTO ai_analysis (insights, analyzed_at, articles_analyzed)
     VALUES (?, ?, ?)
@@ -345,6 +380,7 @@ export function saveAiInsights(insights: string, articlesAnalyzed: number): void
 
 export function getLatestAiInsights(): { insights: string; analyzedAt: string } | null {
   const database = getDb();
+  if (!database) return null;
   const stmt = database.prepare(`
     SELECT insights, analyzed_at as analyzedAt
     FROM ai_analysis
@@ -357,6 +393,7 @@ export function getLatestAiInsights(): { insights: string; analyzedAt: string } 
 // API usage operations
 export function recordApiCall(endpoint: string): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT INTO api_calls (endpoint, called_at)
     VALUES (?, ?)
@@ -366,6 +403,7 @@ export function recordApiCall(endpoint: string): void {
 
 export function getTodayApiCallCount(): number {
   const database = getDb();
+  if (!database) return 0;
   const today = new Date().toISOString().split("T")[0];
   const stmt = database.prepare(`
     SELECT COUNT(*) as count
@@ -377,6 +415,7 @@ export function getTodayApiCallCount(): number {
 
 export function getLastApiCallTime(): number | null {
   const database = getDb();
+  if (!database) return null;
   const stmt = database.prepare(`
     SELECT called_at
     FROM api_calls
@@ -389,6 +428,7 @@ export function getLastApiCallTime(): number | null {
 
 export function getRecentApiCalls(minutes: number = 1): number {
   const database = getDb();
+  if (!database) return 0;
   const since = new Date(Date.now() - minutes * 60 * 1000).toISOString();
   const stmt = database.prepare(`
     SELECT COUNT(*) as count
@@ -401,6 +441,7 @@ export function getRecentApiCalls(minutes: number = 1): number {
 // Cleanup old data
 export function cleanupOldData(daysToKeep: number = 30): void {
   const database = getDb();
+  if (!database) return;
   const cutoff = new Date(
     Date.now() - daysToKeep * 24 * 60 * 60 * 1000
   ).toISOString();
@@ -412,6 +453,7 @@ export function cleanupOldData(daysToKeep: number = 30): void {
 // Followed journalists operations
 export function followJournalist(name: string): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT OR IGNORE INTO followed_journalists (name, followed_at)
     VALUES (?, ?)
@@ -421,12 +463,14 @@ export function followJournalist(name: string): void {
 
 export function unfollowJournalist(name: string): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare("DELETE FROM followed_journalists WHERE name = ?");
   stmt.run(name);
 }
 
 export function isJournalistFollowed(name: string): boolean {
   const database = getDb();
+  if (!database) return false;
   const stmt = database.prepare("SELECT id FROM followed_journalists WHERE name = ?");
   const row = stmt.get(name);
   return !!row;
@@ -434,6 +478,7 @@ export function isJournalistFollowed(name: string): boolean {
 
 export function getFollowedJournalists(): string[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare("SELECT name FROM followed_journalists ORDER BY followed_at DESC");
   const rows = stmt.all() as { name: string }[];
   return rows.map((r) => r.name);
@@ -446,6 +491,7 @@ export function getFollowedJournalistsSet(): Set<string> {
 // Embedding operations
 export function saveEmbedding(uri: string, embedding: number[]): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT OR REPLACE INTO embeddings (uri, embedding, created_at)
     VALUES (?, ?, ?)
@@ -455,6 +501,7 @@ export function saveEmbedding(uri: string, embedding: number[]): void {
 
 export function getEmbedding(uri: string): number[] | null {
   const database = getDb();
+  if (!database) return null;
   const stmt = database.prepare("SELECT embedding FROM embeddings WHERE uri = ?");
   const row = stmt.get(uri) as { embedding: string } | undefined;
   return row ? JSON.parse(row.embedding) : null;
@@ -462,6 +509,7 @@ export function getEmbedding(uri: string): number[] | null {
 
 export function getAllEmbeddings(): { uri: string; embedding: number[] }[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare("SELECT uri, embedding FROM embeddings");
   const rows = stmt.all() as { uri: string; embedding: string }[];
   return rows.map((row) => ({
@@ -472,6 +520,7 @@ export function getAllEmbeddings(): { uri: string; embedding: number[] }[] {
 
 export function getArticlesWithoutEmbeddings(limit: number = 50): Article[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare(`
     SELECT a.data
     FROM articles a
@@ -495,6 +544,7 @@ export function saveCluster(cluster: {
   timespanEnd: string;
 }): void {
   const database = getDb();
+  if (!database) return;
   const stmt = database.prepare(`
     INSERT OR REPLACE INTO clusters (id, title, summary, article_uris, keywords, timespan_start, timespan_end, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -522,6 +572,7 @@ export function getClusters(): {
   updatedAt: string;
 }[] {
   const database = getDb();
+  if (!database) return [];
   const stmt = database.prepare(`
     SELECT id, title, summary, article_uris, keywords, timespan_start, timespan_end, updated_at
     FROM clusters
@@ -551,6 +602,7 @@ export function getClusters(): {
 
 export function clearClusters(): void {
   const database = getDb();
+  if (!database) return;
   database.prepare("DELETE FROM clusters").run();
 }
 
