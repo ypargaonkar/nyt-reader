@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SwipeableCard } from "@/components/SwipeableCard";
 import type { Article } from "@/lib/types";
 import type { NewspaperLayout as LayoutType } from "@/lib/smart-ranker";
 import { cn } from "@/lib/utils";
@@ -736,19 +737,26 @@ export function NewspaperLayout({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             {layout.featured.map((article) => (
-              <FeaturedCard
+              <SwipeableCard
                 key={article.uri}
-                article={article}
-                onRead={onRead}
-                onLike={onLike}
-                onSave={onSave}
-                onOpen={onOpen}
-                onFollowJournalist={onFollowJournalist}
-                isLiked={likedArticleUris.has(article.uri)}
-                isSaved={savedArticleUris.has(article.uri)}
-                followedJournalists={followedJournalists}
-                showRelevanceScore={showRelevanceScore}
-              />
+                onSwipeRight={() => onLike(article.uri)}
+                onSwipeLeft={() => onRead(article.uri)}
+                rightLabel="Like"
+                leftLabel="Dismiss"
+              >
+                <FeaturedCard
+                  article={article}
+                  onRead={onRead}
+                  onLike={onLike}
+                  onSave={onSave}
+                  onOpen={onOpen}
+                  onFollowJournalist={onFollowJournalist}
+                  isLiked={likedArticleUris.has(article.uri)}
+                  isSaved={savedArticleUris.has(article.uri)}
+                  followedJournalists={followedJournalists}
+                  showRelevanceScore={showRelevanceScore}
+                />
+              </SwipeableCard>
             ))}
           </div>
         </section>
@@ -766,19 +774,26 @@ export function NewspaperLayout({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {gridStories.map((article) => (
-              <MiniCard
+              <SwipeableCard
                 key={article.uri}
-                article={article}
-                onRead={onRead}
-                onLike={onLike}
-                onSave={onSave}
-                onOpen={onOpen}
-                onFollowJournalist={onFollowJournalist}
-                isLiked={likedArticleUris.has(article.uri)}
-                isSaved={savedArticleUris.has(article.uri)}
-                followedJournalists={followedJournalists}
-                showRelevanceScore={showRelevanceScore}
-              />
+                onSwipeRight={() => onLike(article.uri)}
+                onSwipeLeft={() => onRead(article.uri)}
+                rightLabel="Like"
+                leftLabel="Dismiss"
+              >
+                <MiniCard
+                  article={article}
+                  onRead={onRead}
+                  onLike={onLike}
+                  onSave={onSave}
+                  onOpen={onOpen}
+                  onFollowJournalist={onFollowJournalist}
+                  isLiked={likedArticleUris.has(article.uri)}
+                  isSaved={savedArticleUris.has(article.uri)}
+                  followedJournalists={followedJournalists}
+                  showRelevanceScore={showRelevanceScore}
+                />
+              </SwipeableCard>
             ))}
           </div>
         </section>
