@@ -9,6 +9,7 @@ import { SettingsDialog } from "@/components/SettingsDialog";
 import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { SwipeableSections } from "@/components/SwipeableSections";
 import { useAppStore } from "@/lib/store";
 import type { FeedSection } from "@/lib/types";
 
@@ -154,11 +155,16 @@ export default function Home() {
         />
       </div>
 
-      <PullToRefresh onRefresh={handleRefresh} disabled={isRefreshing}>
-        <main className="w-full px-4 md:px-8 lg:px-12 py-6 pb-bottom-nav md:pb-6">
-          <Feed onOpenSettings={() => setSettingsOpen(true)} />
-        </main>
-      </PullToRefresh>
+      <SwipeableSections
+        currentSection={currentSection}
+        onSectionChange={handleSectionChange}
+      >
+        <PullToRefresh onRefresh={handleRefresh} disabled={isRefreshing}>
+          <main className="w-full px-4 md:px-8 lg:px-12 py-6 pb-bottom-nav md:pb-6">
+            <Feed onOpenSettings={() => setSettingsOpen(true)} />
+          </main>
+        </PullToRefresh>
+      </SwipeableSections>
 
       {/* Mobile bottom navigation */}
       <MobileBottomNav
