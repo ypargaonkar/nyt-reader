@@ -95,14 +95,14 @@ export function HamburgerMenu({
       {/* Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-50"
+          className="fixed inset-0 bg-black/50 z-[60]"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Slide-out Panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-950 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-950 z-[70] transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
