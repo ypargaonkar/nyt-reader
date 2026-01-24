@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchFilter, applyFilters, type FilterOptions } from "@/components/SearchFilter";
+import { useAppStore } from "@/lib/store";
 import type { Article } from "@/lib/types";
 
 interface HistoryData {
@@ -18,16 +19,31 @@ interface HistoryData {
 }
 
 export default function HistoryPage() {
+  const { globalFilters, setGlobalFilters } = useAppStore();
   const [data, setData] = useState<HistoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("liked");
-  const [filters, setFilters] = useState<FilterOptions>({
-    searchQuery: "",
-    sections: [],
-    readingTime: "any",
-    dateRange: "any",
-    quickFilter: null,
-  });
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Combined filters (global + local search)
+  const filters: FilterOptions = {
+    searchQuery,
+    sections: globalFilters.sections,
+    readingTime: globalFilters.readingTime,
+    dateRange: globalFilters.dateRange,
+    quickFilter: globalFilters.quickFilter,
+  };
+
+  // Handle filter changes
+  const handleFiltersChange = (newFilters: FilterOptions) => {
+    setSearchQuery(newFilters.searchQuery);
+    setGlobalFilters({
+      sections: newFilters.sections,
+      readingTime: newFilters.readingTime,
+      dateRange: newFilters.dateRange,
+      quickFilter: newFilters.quickFilter,
+    });
+  };
 
   // Get current articles based on active tab
   const currentArticles = activeTab === "liked"
@@ -91,7 +107,7 @@ export default function HistoryPage() {
         <div className="mb-6">
           <SearchFilter
             filters={filters}
-            onFiltersChange={setFilters}
+            onFiltersChange={handleFiltersChange}
             availableSections={availableSections}
           />
         </div>

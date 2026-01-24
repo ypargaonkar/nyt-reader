@@ -13,6 +13,14 @@ interface Settings {
   cacheDuration: number; // minutes - how long to cache section data
 }
 
+// Global filters that persist across tabs (search is local per tab)
+interface GlobalFilters {
+  sections: string[];
+  readingTime: "any" | "quick" | "medium" | "long";
+  dateRange: "any" | "6h" | "today" | "week" | "month";
+  quickFilter: "new" | "today" | null;
+}
+
 interface MasterCache {
   articles: Article[];
   fetchedAt: number; // timestamp
@@ -40,6 +48,9 @@ interface AppState {
   // Settings
   settings: Settings;
 
+  // Global filters (persist across tabs)
+  globalFilters: GlobalFilters;
+
   // Actions
   setMasterCache: (articles: Article[]) => void;
   setFilteredArticles: (articles: Article[]) => void;
@@ -64,6 +75,10 @@ interface AppState {
   setApiUsage: (usage: ApiUsage) => void;
 
   updateSettings: (settings: Partial<Settings>) => void;
+
+  // Global filters
+  setGlobalFilters: (filters: Partial<GlobalFilters>) => void;
+  clearGlobalFilters: () => void;
 
   // Hydration
   setReadArticleUris: (uris: Set<string>) => void;
@@ -108,6 +123,13 @@ export const useAppStore = create<AppState>()(
         autoRefresh: true,
         refreshInterval: 15,
         cacheDuration: 15, // Cache duration in minutes
+      },
+
+      globalFilters: {
+        sections: [],
+        readingTime: "any",
+        dateRange: "any",
+        quickFilter: null,
       },
 
       // Actions
@@ -205,6 +227,21 @@ export const useAppStore = create<AppState>()(
           settings: { ...state.settings, ...newSettings },
         })),
 
+      setGlobalFilters: (newFilters) =>
+        set((state) => ({
+          globalFilters: { ...state.globalFilters, ...newFilters },
+        })),
+
+      clearGlobalFilters: () =>
+        set({
+          globalFilters: {
+            sections: [],
+            readingTime: "any",
+            dateRange: "any",
+            quickFilter: null,
+          },
+        }),
+
       setReadArticleUris: (uris) => set({ readArticleUris: uris }),
 
       setLikedArticleUris: (uris) => set({ likedArticleUris: uris }),
@@ -234,6 +271,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         settings: state.settings,
         currentSection: state.currentSection,
+        globalFilters: state.globalFilters,
       }),
     }
   )
@@ -249,3 +287,4 @@ export const useProfile = () => useAppStore((state) => state.profile);
 export const useApiUsage = () => useAppStore((state) => state.apiUsage);
 export const useFollowedJournalists = () => useAppStore((state) => state.followedJournalists);
 export const useSavedArticleUris = () => useAppStore((state) => state.savedArticleUris);
+export const useGlobalFilters = () => useAppStore((state) => state.globalFilters);

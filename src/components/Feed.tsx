@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
-import { AlertCircle, Newspaper, Settings, Database, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List, History, Heart, BookOpen } from "lucide-react";
+import { AlertCircle, Newspaper, Settings, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List, History, Heart, BookOpen } from "lucide-react";
 import { ArticleCard } from "./ArticleCard";
 import { FeedSkeleton } from "./ArticleSkeleton";
 import { MagazineStoryCard } from "./MagazineStoryCard";
@@ -49,6 +49,9 @@ export function Feed({ onOpenSettings }: FeedProps) {
     setSavedArticleUris,
     followJournalist,
     unfollowJournalist,
+    globalFilters,
+    setGlobalFilters,
+    clearGlobalFilters,
   } = useAppStore();
 
   const [initialized, setInitialized] = useState(false);
@@ -68,14 +71,30 @@ export function Feed({ onOpenSettings }: FeedProps) {
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  // Search & Filter state
-  const [filters, setFilters] = useState<FilterOptions>({
-    searchQuery: "",
-    sections: [],
-    readingTime: "any",
-    dateRange: "any",
-    quickFilter: null,
-  });
+  // Local search state (search is per-tab, other filters are global)
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Combined filters object (global filters + local search)
+  const filters: FilterOptions = {
+    searchQuery,
+    sections: globalFilters.sections,
+    readingTime: globalFilters.readingTime,
+    dateRange: globalFilters.dateRange,
+    quickFilter: globalFilters.quickFilter,
+  };
+
+  // Handle filter changes - split between global and local
+  const handleFiltersChange = (newFilters: FilterOptions) => {
+    // Update local search
+    setSearchQuery(newFilters.searchQuery);
+    // Update global filters
+    setGlobalFilters({
+      sections: newFilters.sections,
+      readingTime: newFilters.readingTime,
+      dateRange: newFilters.dateRange,
+      quickFilter: newFilters.quickFilter,
+    });
+  };
 
   // Bulk selection state
   const [bulkMode, setBulkMode] = useState(false);
@@ -386,6 +405,11 @@ export function Feed({ onOpenSettings }: FeedProps) {
     onStoryRebuildNeeded: scheduledStoryRebuild,
     onProfileAnalysisNeeded: scheduledProfileAnalysis,
   });
+
+  // Clear search when switching tabs (search is local per tab)
+  useEffect(() => {
+    setSearchQuery("");
+  }, [currentSection]);
 
   // Load clusters when switching to stories section
   useEffect(() => {
@@ -859,7 +883,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
         {/* Search & Filter */}
         <SearchFilter
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={handleFiltersChange}
           availableSections={historySections}
         />
 
@@ -901,13 +925,10 @@ export function Feed({ onOpenSettings }: FeedProps) {
             <Button
               variant="outline"
               className="mt-4"
-              onClick={() => setFilters({
-                searchQuery: "",
-                sections: [],
-                readingTime: "any",
-                dateRange: "any",
-                quickFilter: null,
-              })}
+              onClick={() => {
+                setSearchQuery("");
+                clearGlobalFilters();
+              }}
             >
               Clear Filters
             </Button>
@@ -1061,7 +1082,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
         {/* Search & Filter (same as For You) */}
         <SearchFilter
           filters={filters}
-          onFiltersChange={setFilters}
+          onFiltersChange={handleFiltersChange}
           availableSections={clusterSections}
         />
 
@@ -1092,7 +1113,10 @@ export function Feed({ onOpenSettings }: FeedProps) {
             </p>
             <Button
               variant="outline"
-              onClick={() => setFilters({ ...filters, searchQuery: "", quickFilter: null })}
+              onClick={() => {
+                setSearchQuery("");
+                setGlobalFilters({ quickFilter: null });
+              }}
             >
               Clear Filters
             </Button>
@@ -1160,7 +1184,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
       {/* Search & Filter */}
       <SearchFilter
         filters={filters}
-        onFiltersChange={setFilters}
+        onFiltersChange={handleFiltersChange}
         availableSections={availableSections}
       />
 
@@ -1244,34 +1268,6 @@ export function Feed({ onOpenSettings }: FeedProps) {
           </>
         )}
 
-        {/* Cache indicator (moved to right) */}
-        {!bulkMode && fromCache && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ml-auto">
-            <Database className="h-4 w-4" />
-            <span>{masterCache?.articles.length || 0} cached</span>
-            {masterCache?.fetchedAt && (
-              <span className="text-xs">
-                (refreshed {(() => {
-                  const mins = Math.floor((Date.now() - masterCache.fetchedAt) / 60000);
-                  if (mins < 1) return "just now";
-                  if (mins === 1) return "1m ago";
-                  if (mins < 60) return `${mins}m ago`;
-                  const hrs = Math.floor(mins / 60);
-                  if (hrs === 1) return "1h ago";
-                  return `${hrs}h ago`;
-                })()})
-              </span>
-            )}
-            <Button
-              variant="link"
-              size="sm"
-              className="h-auto p-0 text-blue-600"
-              onClick={() => fetchArticles(true)}
-            >
-              Refresh
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Results count when filtering */}
@@ -1289,13 +1285,10 @@ export function Feed({ onOpenSettings }: FeedProps) {
           </p>
           <Button
             variant="outline"
-            onClick={() => setFilters({
-              searchQuery: "",
-              sections: [],
-              readingTime: "any",
-              dateRange: "any",
-              quickFilter: null,
-            })}
+            onClick={() => {
+              setSearchQuery("");
+              clearGlobalFilters();
+            }}
           >
             Clear Filters
           </Button>
