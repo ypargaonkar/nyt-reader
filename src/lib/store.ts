@@ -17,8 +17,8 @@ interface Settings {
 interface GlobalFilters {
   sections: string[];
   readingTime: "any" | "quick" | "medium" | "long";
-  dateRange: "any" | "6h" | "today" | "week" | "month";
-  quickFilter: "new" | "today" | null;
+  dateRange: "any" | "today" | "week" | "month";
+  quickFilter: "new" | "6h" | "today" | null;
 }
 
 interface MasterCache {
@@ -129,7 +129,7 @@ export const useAppStore = create<AppState>()(
         sections: [],
         readingTime: "any",
         dateRange: "any",
-        quickFilter: null,
+        quickFilter: "6h",
       },
 
       // Actions
@@ -238,7 +238,7 @@ export const useAppStore = create<AppState>()(
             sections: [],
             readingTime: "any",
             dateRange: "any",
-            quickFilter: null,
+            quickFilter: "6h",
           },
         }),
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, User, RefreshCw, Moon, Sun } from "lucide-react";
+import { Settings, User, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,12 +14,7 @@ import {
 import { SettingsDialog } from "./SettingsDialog";
 import { useAppStore } from "@/lib/store";
 
-interface HeaderProps {
-  onRefresh: () => void;
-  isRefreshing: boolean;
-}
-
-export function Header({ onRefresh, isRefreshing }: HeaderProps) {
+export function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { settings, updateSettings } = useAppStore();
 
@@ -50,19 +45,6 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
 
             {/* Right side actions */}
             <div className="flex items-center gap-2">
-              {/* Refresh */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onRefresh}
-                disabled={isRefreshing}
-                className="h-11 w-11 touch-manipulation"
-              >
-                <RefreshCw
-                  className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`}
-                />
-              </Button>
-
               {/* Dark mode toggle */}
               <Button
                 variant="ghost"

@@ -1016,9 +1016,12 @@ export function Feed({ onOpenSettings }: FeedProps) {
 
     // Filter clusters based on filters
     const filteredClusters = storyClusters.filter((cluster) => {
-      // Quick filter (NEW or TODAY buttons)
+      // Quick filter (NEW, 6H, or TODAY buttons)
       if (filters.quickFilter === "new") {
         if (!cluster.articles.some((a) => isNewArticle(a.publishedDate))) return false;
+      } else if (filters.quickFilter === "6h") {
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        if (!cluster.articles.some((a) => new Date(a.publishedDate) >= sixHoursAgo)) return false;
       } else if (filters.quickFilter === "today") {
         if (!cluster.articles.some((a) => isTodayArticle(a.publishedDate))) return false;
       }
@@ -1033,10 +1036,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
         const now = new Date();
         const hasMatchingArticle = cluster.articles.some((a) => {
           const published = new Date(a.publishedDate);
-          if (filters.dateRange === "6h") {
-            const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-            return published >= sixHoursAgo;
-          } else if (filters.dateRange === "today") {
+          if (filters.dateRange === "today") {
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             return published >= today;
           } else if (filters.dateRange === "week") {

@@ -26,8 +26,8 @@ export interface FilterOptions {
   searchQuery: string;
   sections: string[];
   readingTime: "any" | "quick" | "medium" | "long";
-  dateRange: "any" | "6h" | "today" | "week" | "month";
-  quickFilter?: "new" | "today" | null;
+  dateRange: "any" | "today" | "week" | "month";
+  quickFilter?: "new" | "6h" | "today" | null;
 }
 
 interface SearchFilterProps {
@@ -45,7 +45,6 @@ const readingTimeLabels = {
 
 const dateRangeLabels = {
   any: "Any time",
-  "6h": "Last 6 hours",
   today: "Today",
   week: "This week",
   month: "This month",
@@ -82,7 +81,7 @@ export function SearchFilter({
     });
   };
 
-  const toggleQuickFilter = (filter: "new" | "today") => {
+  const toggleQuickFilter = (filter: "new" | "6h" | "today") => {
     onFiltersChange({
       ...filters,
       quickFilter: filters.quickFilter === filter ? null : filter,
@@ -121,7 +120,7 @@ export function SearchFilter({
           )}
         </div>
 
-        {/* Quick filter buttons - NEW and TODAY */}
+        {/* Quick filter buttons - NEW, 6H, TODAY */}
         <Button
           variant={filters.quickFilter === "new" ? "default" : "outline"}
           size="sm"
@@ -135,6 +134,21 @@ export function SearchFilter({
         >
           <Zap className="w-3.5 h-3.5" />
           NEW
+        </Button>
+
+        <Button
+          variant={filters.quickFilter === "6h" ? "default" : "outline"}
+          size="sm"
+          onClick={() => toggleQuickFilter("6h")}
+          className={cn(
+            "gap-1.5 font-medium whitespace-nowrap",
+            filters.quickFilter === "6h"
+              ? "bg-blue-500 hover:bg-blue-600 text-white"
+              : "hover:border-blue-300 hover:text-blue-600"
+          )}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          6H
         </Button>
 
         <Button
@@ -353,9 +367,12 @@ export function applyFilters<T extends { title: string; abstract: string; sectio
   filters: FilterOptions
 ): T[] {
   return articles.filter((article) => {
-    // Quick filter (NEW or TODAY buttons)
+    // Quick filter (NEW, 6H, or TODAY buttons)
     if (filters.quickFilter === "new") {
       if (!isNewArticle(article.publishedDate)) return false;
+    } else if (filters.quickFilter === "6h") {
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+      if (new Date(article.publishedDate) < sixHoursAgo) return false;
     } else if (filters.quickFilter === "today") {
       if (!isTodayArticle(article.publishedDate)) return false;
     }
@@ -398,10 +415,7 @@ export function applyFilters<T extends { title: string; abstract: string; sectio
     // Date range
     const publishedDate = new Date(article.publishedDate);
     const now = new Date();
-    if (filters.dateRange === "6h") {
-      const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-      if (publishedDate < sixHoursAgo) return false;
-    } else if (filters.dateRange === "today") {
+    if (filters.dateRange === "today") {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       if (publishedDate < today) return false;
     } else if (filters.dateRange === "week") {
