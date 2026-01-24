@@ -286,6 +286,21 @@ export const useAppStore = create<AppState>()(
         }
         return state;
       },
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<AppState>;
+        return {
+          ...currentState,
+          ...persisted,
+          globalFilters: {
+            ...currentState.globalFilters,
+            ...persisted.globalFilters,
+          },
+          settings: {
+            ...currentState.settings,
+            ...persisted.settings,
+          },
+        };
+      },
       partialize: (state) => ({
         settings: state.settings,
         currentSection: state.currentSection,
