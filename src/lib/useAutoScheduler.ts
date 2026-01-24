@@ -5,9 +5,9 @@ import { useAppStore } from "./store";
 
 // Schedule intervals in milliseconds
 const SCHEDULE = {
-  embeddings: 3 * 60 * 60 * 1000, // Every 3 hours (with story rebuild)
-  storyRebuild: 3 * 60 * 60 * 1000, // Every 3 hours (8x/day)
-  profileAnalysis: 12 * 60 * 60 * 1000, // Every 12 hours (2x/day)
+  embeddings: 6 * 60 * 60 * 1000, // Every 6 hours (with story rebuild)
+  storyRebuild: 6 * 60 * 60 * 1000, // Every 6 hours (4x/day)
+  profileAnalysis: 3 * 24 * 60 * 60 * 1000, // Every 3 days
 };
 
 // Local storage keys for last run times
