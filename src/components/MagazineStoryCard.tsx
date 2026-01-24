@@ -65,7 +65,7 @@ export function MagazineStoryCard({
   );
 
   // Get the hero image from the first article with an image (upscaled)
-  const rawHeroImage = cluster.articles.find((a) => a.imageUrl)?.imageUrl;
+  const rawHeroImage = cluster.articles.find((a) => a.imageUrl)?.imageUrl ?? null;
   const heroImage = getHighResImageUrl(rawHeroImage);
 
   // Get articles sorted by date (newest first)
