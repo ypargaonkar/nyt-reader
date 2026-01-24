@@ -907,7 +907,7 @@ export function NewspaperLayout({
           <div className="flex items-center gap-3 mb-6">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
             <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Featured Stories
+              Featured Reports
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
           </div>
@@ -944,7 +944,7 @@ export function NewspaperLayout({
           <div className="flex items-center gap-3 mb-6">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
             <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              More Stories
+              More Reports
             </h2>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
           </div>
