@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { SectionTabs } from "@/components/SectionTabs";
-import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Feed } from "@/components/Feed";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
@@ -144,13 +143,6 @@ export default function Home() {
       <Header
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
-        hamburgerMenu={
-          <HamburgerMenu
-            currentSection={currentSection}
-            onSectionChange={handleSectionChange}
-            onSettingsClick={() => setSettingsOpen(true)}
-          />
-        }
       />
 
       {/* Desktop: Show section tabs, Mobile: Hidden (uses bottom nav) */}
