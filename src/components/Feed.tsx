@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
-import { AlertCircle, Newspaper, Settings, Database, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List } from "lucide-react";
+import { AlertCircle, Newspaper, Settings, Database, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List, History, Heart, BookOpen } from "lucide-react";
 import { ArticleCard } from "./ArticleCard";
 import { FeedSkeleton } from "./ArticleSkeleton";
 import { MagazineStoryCard } from "./MagazineStoryCard";
@@ -83,6 +83,12 @@ export function Feed({ onOpenSettings }: FeedProps) {
 
   // Layout mode state (card vs newspaper)
   const [viewMode, setViewMode] = useState<"card" | "newspaper">("newspaper");
+
+  // History state
+  const [historyTab, setHistoryTab] = useState<"liked" | "read">("liked");
+  const [likedArticles, setLikedArticles] = useState<Article[]>([]);
+  const [readArticles, setReadArticles] = useState<Article[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   // Get date string for grouping (YYYY-MM-DD)
   const getDateKey = (dateStr: string): string => {
@@ -388,6 +394,35 @@ export function Feed({ onOpenSettings }: FeedProps) {
       checkEmbeddingsStatus();
     }
   }, [currentSection, initialized, fetchClusters, checkEmbeddingsStatus]);
+
+  // Load history when switching to history section
+  useEffect(() => {
+    if (currentSection === "history" && initialized) {
+      const fetchHistory = async () => {
+        setHistoryLoading(true);
+        try {
+          const [likedRes, readRes] = await Promise.all([
+            fetch("/api/history?type=liked&limit=100"),
+            fetch("/api/history?type=read&limit=100"),
+          ]);
+
+          if (likedRes.ok) {
+            const data = await likedRes.json();
+            setLikedArticles(data.articles || []);
+          }
+          if (readRes.ok) {
+            const data = await readRes.json();
+            setReadArticles(data.articles || []);
+          }
+        } catch (error) {
+          console.error("Failed to fetch history:", error);
+        } finally {
+          setHistoryLoading(false);
+        }
+      };
+      fetchHistory();
+    }
+  }, [currentSection, initialized]);
 
   // Fetch articles on initial load
   useEffect(() => {
@@ -777,6 +812,123 @@ export function Feed({ onOpenSettings }: FeedProps) {
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           Save articles to read later by clicking the bookmark icon on any article.
         </p>
+      </div>
+    );
+  }
+
+  // History section
+  if (currentSection === "history") {
+    const historyArticles = historyTab === "liked" ? likedArticles : readArticles;
+    const filteredHistory = applyFilters(historyArticles, filters);
+    const historySections = [...new Set(historyArticles.map((a) => a.section))].sort();
+    const hasHistoryFilters = filters.searchQuery || filters.sections.length > 0 ||
+      filters.readingTime !== "any" || filters.dateRange !== "any" || filters.quickFilter;
+
+    if (historyLoading) {
+      return <FeedSkeleton />;
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Tab selector */}
+        <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">
+          <button
+            onClick={() => setHistoryTab("liked")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
+              historyTab === "liked"
+                ? "bg-white dark:bg-gray-700 shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+            }`}
+          >
+            <Heart className="h-4 w-4" />
+            Liked ({likedArticles.length})
+          </button>
+          <button
+            onClick={() => setHistoryTab("read")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
+              historyTab === "read"
+                ? "bg-white dark:bg-gray-700 shadow-sm"
+                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+            }`}
+          >
+            <BookOpen className="h-4 w-4" />
+            Read ({readArticles.length})
+          </button>
+        </div>
+
+        {/* Search & Filter */}
+        <SearchFilter
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableSections={historySections}
+        />
+
+        {/* Results count when filtering */}
+        {hasHistoryFilters && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 px-1">
+            Showing {filteredHistory.length} of {historyArticles.length} articles
+          </p>
+        )}
+
+        {/* Articles */}
+        {filteredHistory.length > 0 ? (
+          <div className="space-y-4">
+            {filteredHistory.map((article) => (
+              <ArticleCard
+                key={article.uri}
+                article={article}
+                onRead={handleRead}
+                onLike={handleLike}
+                onSave={handleSave}
+                onOpen={handleOpen}
+                onFollowJournalist={handleFollowJournalist}
+                onPreview={handlePreview}
+                isLiked={likedArticleUris.has(article.uri)}
+                isSaved={savedArticleUris.has(article.uri)}
+                isSelected={false}
+                isSelectable={false}
+                isChecked={false}
+                showRelevanceScore={false}
+                followedJournalists={followedJournalists}
+              />
+            ))}
+          </div>
+        ) : hasHistoryFilters ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Search className="h-12 w-12 text-gray-300 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No matches found</h2>
+            <p className="text-gray-500">No articles match your filters</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => setFilters({
+                searchQuery: "",
+                sections: [],
+                readingTime: "any",
+                dateRange: "any",
+                quickFilter: null,
+              })}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            {historyTab === "liked" ? (
+              <>
+                <Heart className="h-12 w-12 text-gray-300 mb-4" />
+                <h2 className="text-xl font-semibold mb-2">No liked articles</h2>
+                <p className="text-gray-500">Articles you like will appear here</p>
+              </>
+            ) : (
+              <>
+                <BookOpen className="h-12 w-12 text-gray-300 mb-4" />
+                <h2 className="text-xl font-semibold mb-2">No reading history</h2>
+                <p className="text-gray-500">Articles you mark as read will appear here</p>
+              </>
+            )}
+          </div>
+        )}
       </div>
     );
   }

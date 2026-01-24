@@ -141,7 +141,7 @@ export interface ApiUsage {
 export type FeedSource = "top-stories" | "times-wire" | "most-popular" | "search";
 
 // Main navigation tabs
-export type MainTab = "stories" | "for-you" | "discover" | "saved";
+export type MainTab = "stories" | "for-you" | "discover" | "saved" | "history";
 
 // Category sections (accessible via hamburger menu)
 export type CategorySection =

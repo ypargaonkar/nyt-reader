@@ -5,6 +5,7 @@ import {
   Bookmark,
   Layers,
   Compass,
+  History,
 } from "lucide-react";
 import type { FeedSection, MainTab } from "@/lib/types";
 
@@ -18,6 +19,7 @@ const navItems: { id: MainTab; label: string; icon: React.ReactNode }[] = [
   { id: "for-you", label: "For You", icon: <Sparkles className="h-5 w-5" /> },
   { id: "discover", label: "Discover", icon: <Compass className="h-5 w-5" /> },
   { id: "saved", label: "Saved", icon: <Bookmark className="h-5 w-5" /> },
+  { id: "history", label: "History", icon: <History className="h-5 w-5" /> },
 ];
 
 export function MobileBottomNav({

@@ -10,6 +10,7 @@ const sectionOrder: MainTab[] = [
   "for-you",
   "discover",
   "saved",
+  "history",
 ];
 
 const sectionLabels: Record<MainTab, string> = {
@@ -17,6 +18,7 @@ const sectionLabels: Record<MainTab, string> = {
   "for-you": "For You",
   "discover": "Discover",
   "saved": "Saved",
+  "history": "History",
 };
 
 interface SwipeableSectionsProps {

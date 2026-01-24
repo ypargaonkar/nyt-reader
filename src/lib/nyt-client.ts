@@ -18,6 +18,7 @@ const SECTION_FILTERS: Record<FeedSection, (article: Article) => boolean> = {
   discover: () => true, // Will be sorted by inverse relevance (serendipity)
   saved: () => true, // Handled separately in Feed.tsx
   stories: () => true, // Handled separately in Feed.tsx
+  history: () => true, // Handled separately in Feed.tsx
   politics: (a) =>
     a.section.toLowerCase() === "politics" ||
     a.section.toLowerCase() === "us politics" ||

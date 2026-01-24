@@ -6,6 +6,7 @@ import {
   Bookmark,
   Layers,
   Compass,
+  History,
 } from "lucide-react";
 import type { FeedSection, MainTab } from "@/lib/types";
 
@@ -19,6 +20,7 @@ const mainTabs: { id: MainTab; label: string; icon: React.ReactNode }[] = [
   { id: "for-you", label: "For You", icon: <Sparkles className="h-4 w-4" /> },
   { id: "discover", label: "Discover", icon: <Compass className="h-4 w-4" /> },
   { id: "saved", label: "Saved", icon: <Bookmark className="h-4 w-4" /> },
+  { id: "history", label: "History", icon: <History className="h-4 w-4" /> },
 ];
 
 export function SectionTabs({
