@@ -118,6 +118,45 @@ const SECTION_FILTERS: Record<FeedSection, (article: Article) => boolean> = {
     a.desk.toLowerCase() === "magazine",
 };
 
+// Attempt to get a higher resolution version of an NYT image URL
+// NYT image URLs have size suffixes that can be swapped
+function getHighResImageUrl(url: string): string {
+  if (!url) return url;
+
+  // Common size suffixes in NYT image URLs (smallest to largest)
+  const sizeSuffixes = [
+    "thumbStandard",
+    "thumbLarge",
+    "mediumThreeByTwo210",
+    "mediumThreeByTwo440",
+    "articleInline",
+    "articleLarge",
+    "popup",
+    "superJumbo",
+    "jumbo",
+  ];
+
+  // Try to replace any known size suffix with superJumbo (largest)
+  for (const suffix of sizeSuffixes) {
+    if (url.includes(`-${suffix}.`) || url.includes(`-${suffix}-`)) {
+      return url.replace(`-${suffix}`, "-superJumbo");
+    }
+    // Also check without hyphen prefix
+    if (url.includes(`/${suffix}.`) || url.includes(`${suffix}.jpg`) || url.includes(`${suffix}.png`)) {
+      return url.replace(suffix, "superJumbo");
+    }
+  }
+
+  // For URLs with format in path like /images/.../NAME-FORMAT.jpg
+  // Try to extract and replace
+  const formatMatch = url.match(/(-)(thumbStandard|thumbLarge|mediumThreeByTwo\d+|articleInline|articleLarge|popup|jumbo|superJumbo|small|medium|large|xlarge)(\.(jpg|jpeg|png|webp))/i);
+  if (formatMatch) {
+    return url.replace(formatMatch[0], `-superJumbo${formatMatch[3]}`);
+  }
+
+  return url;
+}
+
 // Check if an article is in English
 export function isEnglishArticle(raw: NYTArticle): boolean {
   const url = raw.url || raw.web_url || "";
@@ -231,9 +270,11 @@ export function normalizeArticle(raw: NYTArticle): Article {
     }
 
     if (bestImage && "url" in bestImage) {
-      imageUrl = bestImage.url.startsWith("http")
+      const rawUrl = bestImage.url.startsWith("http")
         ? bestImage.url
         : `https://static01.nyt.com/${bestImage.url}`;
+      // Try to get a higher resolution version
+      imageUrl = getHighResImageUrl(rawUrl);
       imageCaption = bestImage.caption || null;
     }
   } else if (raw.media && Array.isArray(raw.media) && raw.media.length > 0) {
@@ -241,7 +282,8 @@ export function normalizeArticle(raw: NYTArticle): Article {
     if (media["media-metadata"] && media["media-metadata"].length > 0) {
       // media-metadata is sorted by size, last is largest
       const largest = media["media-metadata"][media["media-metadata"].length - 1];
-      imageUrl = largest.url;
+      // Try to get a higher resolution version
+      imageUrl = getHighResImageUrl(largest.url);
       imageCaption = media.caption || null;
     }
   }
