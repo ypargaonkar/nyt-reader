@@ -5,7 +5,7 @@ import { formatDistanceToNow, format, isToday, isYesterday, differenceInMinutes 
 import {
   Heart,
   Bookmark,
-  Check,
+  X,
   Clock,
   UserPlus,
   UserCheck,
@@ -410,10 +410,11 @@ function ActionButtons({
         className={cn(
           buttonSize,
           "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
-          "hover:bg-green-100 dark:hover:bg-green-900/50 text-gray-500 hover:text-green-500"
+          "hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
         )}
+        title="Dismiss"
       >
-        <Check className={iconSize} />
+        <X className={iconSize} />
       </button>
     </div>
   );

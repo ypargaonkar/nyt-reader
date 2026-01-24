@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Heart, BookOpen, ExternalLink } from "lucide-react";
+import { ArrowLeft, Heart, BookOpen, ExternalLink, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,24 @@ export default function HistoryPage() {
   const [data, setData] = useState<HistoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("liked");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter articles based on search query
+  const filterArticles = (articles: Article[]) => {
+    if (!searchQuery.trim()) return articles;
+    const query = searchQuery.toLowerCase();
+    return articles.filter(
+      (article) =>
+        article.title.toLowerCase().includes(query) ||
+        article.abstract.toLowerCase().includes(query) ||
+        article.byline.toLowerCase().includes(query) ||
+        article.section.toLowerCase().includes(query) ||
+        article.keywords.some((k) => k.toLowerCase().includes(query))
+    );
+  };
+
+  const filteredLiked = data ? filterArticles(data.likedArticles) : [];
+  const filteredRead = data ? filterArticles(data.readArticles) : [];
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -64,15 +82,35 @@ export default function HistoryPage() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search your history..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="liked" className="gap-2">
               <Heart className="h-4 w-4" />
-              Liked
+              Liked {data && `(${filteredLiked.length})`}
             </TabsTrigger>
             <TabsTrigger value="read" className="gap-2">
               <BookOpen className="h-4 w-4" />
-              Read
+              Read {data && `(${filteredRead.length})`}
             </TabsTrigger>
           </TabsList>
 
@@ -83,12 +121,18 @@ export default function HistoryPage() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : data && data.likedArticles.length > 0 ? (
+            ) : filteredLiked.length > 0 ? (
               <div className="space-y-4">
-                {data.likedArticles.map((article) => (
+                {filteredLiked.map((article) => (
                   <HistoryCard key={article.uri} article={article} />
                 ))}
               </div>
+            ) : searchQuery ? (
+              <EmptyState
+                icon={<Search className="h-12 w-12 text-gray-300" />}
+                title="No matches found"
+                description={`No liked articles match "${searchQuery}"`}
+              />
             ) : (
               <EmptyState
                 icon={<Heart className="h-12 w-12 text-gray-300" />}
@@ -105,17 +149,23 @@ export default function HistoryPage() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : data && data.readArticles.length > 0 ? (
+            ) : filteredRead.length > 0 ? (
               <div className="space-y-4">
-                {data.readArticles.map((article) => (
+                {filteredRead.map((article) => (
                   <HistoryCard key={article.uri} article={article} />
                 ))}
               </div>
+            ) : searchQuery ? (
+              <EmptyState
+                icon={<Search className="h-12 w-12 text-gray-300" />}
+                title="No matches found"
+                description={`No read articles match "${searchQuery}"`}
+              />
             ) : (
               <EmptyState
                 icon={<BookOpen className="h-12 w-12 text-gray-300" />}
                 title="No reading history"
-                description="Articles you mark as read will appear here."
+                description="Articles you mark as read or dismiss will appear here."
               />
             )}
           </TabsContent>
