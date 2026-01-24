@@ -498,31 +498,33 @@ function FeaturedCard({
         window.open(article.url, "_blank");
       }}
     >
-      {/* Image with overlay */}
-      <ArticleImage
-        src={article.imageUrl}
-        alt={article.title}
-        section={article.section}
-        containerClassName="h-52"
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        showOverlay
-        overlayClassName="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-      >
-        {/* Floating badges */}
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <DateBadge publishedDate={article.publishedDate} />
+      {/* Image with overlay - only render if there's an image */}
+      {article.imageUrl && (
+        <ArticleImage
+          src={article.imageUrl}
+          alt={article.title}
+          section={article.section}
+          containerClassName="h-52"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          showOverlay
+          overlayClassName="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        >
+          {/* Floating badges */}
+          <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <DateBadge publishedDate={article.publishedDate} />
+            </div>
+            {showRelevanceScore && article.relevanceScore && (
+              <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
+                {article.relevanceScore}% match
+              </Badge>
+            )}
           </div>
-          {showRelevanceScore && article.relevanceScore && (
-            <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
-              {article.relevanceScore}% match
-            </Badge>
-          )}
-        </div>
 
-        {/* Section indicator bar */}
-        <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
-      </ArticleImage>
+          {/* Section indicator bar */}
+          <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+        </ArticleImage>
+      )}
 
       {/* Content */}
       <div className="p-5">
@@ -611,24 +613,26 @@ function MiniCard({
         window.open(article.url, "_blank");
       }}
     >
-      {/* Image */}
-      <ArticleImage
-        src={article.imageUrl}
-        alt={article.title}
-        section={article.section}
-        containerClassName="h-40"
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-      >
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-          <DateBadge publishedDate={article.publishedDate} />
-          {showRelevanceScore && article.relevanceScore && (
-            <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
-              {article.relevanceScore}%
-            </Badge>
+      {/* Image - only render if there's an image */}
+      {article.imageUrl && (
+        <ArticleImage
+          src={article.imageUrl}
+          alt={article.title}
+          section={article.section}
+          containerClassName="h-40"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        >
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+            <DateBadge publishedDate={article.publishedDate} />
+            {showRelevanceScore && article.relevanceScore && (
+              <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
+                {article.relevanceScore}%
+              </Badge>
           )}
         </div>
-        <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
-      </ArticleImage>
+          <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+        </ArticleImage>
+      )}
 
       {/* Content */}
       <div className="p-4">
@@ -713,23 +717,25 @@ function ScrollCard({
         window.open(article.url, "_blank");
       }}
     >
-      <ArticleImage
-        src={article.imageUrl}
-        alt={article.title}
-        section={article.section}
-        containerClassName="h-36"
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-      >
-        <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
-        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-          <DateBadge publishedDate={article.publishedDate} />
-          {showRelevanceScore && article.relevanceScore && (
-            <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
-              {article.relevanceScore}%
-            </Badge>
-          )}
-        </div>
-      </ArticleImage>
+      {article.imageUrl && (
+        <ArticleImage
+          src={article.imageUrl}
+          alt={article.title}
+          section={article.section}
+          containerClassName="h-36"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        >
+          <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+          <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+            <DateBadge publishedDate={article.publishedDate} />
+            {showRelevanceScore && article.relevanceScore && (
+              <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
+                {article.relevanceScore}%
+              </Badge>
+            )}
+          </div>
+        </ArticleImage>
+      )}
 
       <div className="p-4">
         <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
