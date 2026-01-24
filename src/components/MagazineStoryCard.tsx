@@ -57,7 +57,9 @@ export function MagazineStoryCard({
   savedArticleUris = new Set(),
 }: MagazineStoryCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  // Track which article's image we're trying (index into articlesWithImages)
+  const [imageIndex, setImageIndex] = useState(0);
+  // Track if we're trying original vs high-res for current image
   const [useOriginal, setUseOriginal] = useState(false);
 
   const timespanStart = new Date(cluster.timespan.start);
@@ -66,21 +68,32 @@ export function MagazineStoryCard({
     (timespanEnd.getTime() - timespanStart.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Get the hero image from the first article with an image
-  const rawHeroImage = cluster.articles.find((a) => a.imageUrl)?.imageUrl ?? null;
-  const highResImage = getHighResImageUrl(rawHeroImage);
+  // Get all articles that have images
+  const articlesWithImages = cluster.articles.filter((a) => a.imageUrl);
 
-  // Use original if high-res failed, or null if both failed
-  const heroImage = imageError ? null : (useOriginal ? rawHeroImage : highResImage);
+  // Get current image to try
+  const currentArticleWithImage = articlesWithImages[imageIndex];
+  const rawImage = currentArticleWithImage?.imageUrl ?? null;
+  const highResImage = getHighResImageUrl(rawImage);
 
-  // Handle image load error - first try original, then give up
+  // Determine which URL to use
+  const heroImage = rawImage ? (useOriginal ? rawImage : highResImage) : null;
+
+  // Are we using a fallback image (not the first one)?
+  const isUsingFallbackImage = imageIndex > 0 && heroImage;
+
+  // No images available at all
+  const noImagesAvailable = articlesWithImages.length === 0 || imageIndex >= articlesWithImages.length;
+
+  // Handle image load error - try original, then next article's image
   const handleImageError = () => {
-    if (!useOriginal && rawHeroImage !== highResImage) {
-      // First failure: try original image
+    if (!useOriginal && rawImage !== highResImage) {
+      // First: try original resolution of current image
       setUseOriginal(true);
     } else {
-      // Second failure: show placeholder
-      setImageError(true);
+      // Try next article's image
+      setUseOriginal(false);
+      setImageIndex((prev) => prev + 1);
     }
   };
 
@@ -91,14 +104,103 @@ export function MagazineStoryCard({
 
   const latestArticle = sortedArticles[0];
 
+  // Shared content component to avoid duplication
+  const CardContent = ({ isDark = true }: { isDark?: boolean }) => (
+    <>
+      {/* Meta badges */}
+      <div className="flex items-center gap-2 mb-3">
+        <Badge className={cn(
+          "border-0",
+          isDark ? "bg-blue-600/90 text-white" : "bg-blue-600 text-white"
+        )}>
+          DEVELOPING
+        </Badge>
+        <span className={isDark ? "text-white/80 text-sm" : "text-gray-500 dark:text-gray-400 text-sm"}>
+          {cluster.articles.length} articles
+        </span>
+        {daysDiff > 1 && (
+          <span className={isDark ? "text-white/80 text-sm" : "text-gray-500 dark:text-gray-400 text-sm"}>
+            {daysDiff} days
+          </span>
+        )}
+      </div>
+
+      {/* Title */}
+      <h2 className={cn(
+        "font-serif text-2xl md:text-4xl font-bold leading-tight mb-3",
+        isDark ? "text-white" : "text-gray-900 dark:text-white"
+      )}>
+        {cluster.title}
+      </h2>
+
+      {/* Summary */}
+      {cluster.summary && (
+        <p className={cn(
+          "text-sm md:text-base leading-relaxed mb-4 line-clamp-3",
+          isDark ? "text-white/90 max-w-3xl" : "text-gray-600 dark:text-gray-300"
+        )}>
+          {cluster.summary}
+        </p>
+      )}
+
+      {/* CTA */}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="secondary"
+          size="sm"
+          className={cn(
+            isDark
+              ? "bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+              : "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+        >
+          {expanded ? (
+            <>
+              <ChevronUp className="w-4 h-4 mr-1" />
+              Hide timeline
+            </>
+          ) : (
+            <>
+              Read full story
+              <ChevronDown className="w-4 h-4 ml-1" />
+            </>
+          )}
+        </Button>
+
+        {latestArticle && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={isDark
+              ? "text-white/80 hover:text-white hover:bg-white/10"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(latestArticle.url, "_blank");
+            }}
+          >
+            <ExternalLink className="w-4 h-4 mr-1" />
+            Latest article
+          </Button>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className="mb-8">
-      {/* Hero section - full bleed */}
+      {/* Hero section */}
       <div
         className="relative cursor-pointer group"
         onClick={() => setExpanded(!expanded)}
       >
-        {heroImage ? (
+        {/* Case 1: Full-bleed hero image (primary image works) */}
+        {heroImage && !isUsingFallbackImage && (
           <div className="relative aspect-[16/10] md:aspect-[21/9] overflow-hidden rounded-xl">
             <img
               src={heroImage}
@@ -107,154 +209,36 @@ export function MagazineStoryCard({
               onError={handleImageError}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-            {/* Content overlay */}
             <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
-              {/* Meta badges */}
-              <div className="flex items-center gap-2 mb-3">
-                <Badge className="bg-blue-600/90 text-white border-0">
-                  DEVELOPING
-                </Badge>
-                <span className="text-white/80 text-sm">
-                  {cluster.articles.length} articles
-                </span>
-                {daysDiff > 1 && (
-                  <span className="text-white/80 text-sm">
-                    {daysDiff} days
-                  </span>
-                )}
-              </div>
-
-              {/* Title */}
-              <h2 className="font-serif text-2xl md:text-4xl font-bold text-white leading-tight mb-3">
-                {cluster.title}
-              </h2>
-
-              {/* Summary */}
-              {cluster.summary && (
-                <p className="text-white/90 text-sm md:text-base leading-relaxed mb-4 max-w-3xl line-clamp-3">
-                  {cluster.summary}
-                </p>
-              )}
-
-              {/* CTA */}
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpanded(!expanded);
-                  }}
-                >
-                  {expanded ? (
-                    <>
-                      <ChevronUp className="w-4 h-4 mr-1" />
-                      Hide timeline
-                    </>
-                  ) : (
-                    <>
-                      Read full story
-                      <ChevronDown className="w-4 h-4 ml-1" />
-                    </>
-                  )}
-                </Button>
-
-                {latestArticle && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(latestArticle.url, "_blank");
-                    }}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-1" />
-                    Latest article
-                  </Button>
-                )}
-              </div>
+              <CardContent isDark />
             </div>
           </div>
-        ) : (
-          // Fallback for no image or failed image
-          <div className="relative aspect-[16/10] md:aspect-[21/9] overflow-hidden rounded-xl bg-gradient-to-br from-gray-800 to-gray-900">
-            {/* Centered icon */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-20">
-              <Newspaper className="w-32 h-32 text-gray-500" />
+        )}
+
+        {/* Case 2: Side-by-side layout (using fallback image from another article) */}
+        {heroImage && isUsingFallbackImage && (
+          <div className="flex flex-col md:flex-row rounded-xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg">
+            {/* Content on left */}
+            <div className="flex-1 p-6 md:p-8 flex flex-col justify-center">
+              <CardContent isDark={false} />
             </div>
-
-            {/* Content overlay */}
-            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
-              {/* Meta badges */}
-              <div className="flex items-center gap-2 mb-3">
-                <Badge className="bg-blue-600/90 text-white border-0">
-                  DEVELOPING
-                </Badge>
-                <span className="text-white/80 text-sm">
-                  {cluster.articles.length} articles
-                </span>
-                {daysDiff > 1 && (
-                  <span className="text-white/80 text-sm">
-                    {daysDiff} days
-                  </span>
-                )}
-              </div>
-
-              {/* Title */}
-              <h2 className="font-serif text-2xl md:text-4xl font-bold text-white leading-tight mb-3">
-                {cluster.title}
-              </h2>
-
-              {/* Summary */}
-              {cluster.summary && (
-                <p className="text-white/90 text-sm md:text-base leading-relaxed mb-4 max-w-3xl line-clamp-3">
-                  {cluster.summary}
-                </p>
-              )}
-
-              {/* CTA */}
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpanded(!expanded);
-                  }}
-                >
-                  {expanded ? (
-                    <>
-                      <ChevronUp className="w-4 h-4 mr-1" />
-                      Hide timeline
-                    </>
-                  ) : (
-                    <>
-                      Read full story
-                      <ChevronDown className="w-4 h-4 ml-1" />
-                    </>
-                  )}
-                </Button>
-
-                {latestArticle && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(latestArticle.url, "_blank");
-                    }}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-1" />
-                    Latest article
-                  </Button>
-                )}
-              </div>
+            {/* Image on right */}
+            <div className="md:w-2/5 h-64 md:h-auto relative overflow-hidden">
+              <img
+                src={heroImage}
+                alt={cluster.title}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                onError={handleImageError}
+              />
+              <div className="absolute inset-0 bg-gradient-to-l from-transparent to-black/10" />
             </div>
+          </div>
+        )}
+
+        {/* Case 3: No image available - clean text card */}
+        {noImagesAvailable && (
+          <div className="rounded-xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 p-6 md:p-8">
+            <CardContent isDark />
           </div>
         )}
       </div>
