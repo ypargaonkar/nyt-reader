@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowLeft, Heart, BookOpen, ExternalLink, Search, X } from "lucide-react";
+import { ArrowLeft, Heart, BookOpen, ExternalLink, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SearchFilter, applyFilters, type FilterOptions } from "@/components/SearchFilter";
 import type { Article } from "@/lib/types";
 
 interface HistoryData {
@@ -20,24 +21,28 @@ export default function HistoryPage() {
   const [data, setData] = useState<HistoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("liked");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<FilterOptions>({
+    searchQuery: "",
+    sections: [],
+    readingTime: "any",
+    dateRange: "any",
+    quickFilter: null,
+  });
 
-  // Filter articles based on search query
-  const filterArticles = (articles: Article[]) => {
-    if (!searchQuery.trim()) return articles;
-    const query = searchQuery.toLowerCase();
-    return articles.filter(
-      (article) =>
-        article.title.toLowerCase().includes(query) ||
-        article.abstract.toLowerCase().includes(query) ||
-        article.byline.toLowerCase().includes(query) ||
-        article.section.toLowerCase().includes(query) ||
-        article.keywords.some((k) => k.toLowerCase().includes(query))
-    );
-  };
+  // Get current articles based on active tab
+  const currentArticles = activeTab === "liked"
+    ? (data?.likedArticles || [])
+    : (data?.readArticles || []);
 
-  const filteredLiked = data ? filterArticles(data.likedArticles) : [];
-  const filteredRead = data ? filterArticles(data.readArticles) : [];
+  // Get available sections from current tab's articles
+  const availableSections = [...new Set(currentArticles.map((a) => a.section))].sort();
+
+  // Apply filters
+  const filteredLiked = data ? applyFilters(data.likedArticles, filters) : [];
+  const filteredRead = data ? applyFilters(data.readArticles, filters) : [];
+
+  const hasActiveFilters = filters.searchQuery || filters.sections.length > 0 ||
+    filters.readingTime !== "any" || filters.dateRange !== "any" || filters.quickFilter;
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -82,24 +87,13 @@ export default function HistoryPage() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Search bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search your history..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        {/* Search & Filter */}
+        <div className="mb-6">
+          <SearchFilter
+            filters={filters}
+            onFiltersChange={setFilters}
+            availableSections={availableSections}
           />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -127,11 +121,11 @@ export default function HistoryPage() {
                   <HistoryCard key={article.uri} article={article} />
                 ))}
               </div>
-            ) : searchQuery ? (
+            ) : hasActiveFilters ? (
               <EmptyState
                 icon={<Search className="h-12 w-12 text-gray-300" />}
                 title="No matches found"
-                description={`No liked articles match "${searchQuery}"`}
+                description="No liked articles match your filters"
               />
             ) : (
               <EmptyState
@@ -155,11 +149,11 @@ export default function HistoryPage() {
                   <HistoryCard key={article.uri} article={article} />
                 ))}
               </div>
-            ) : searchQuery ? (
+            ) : hasActiveFilters ? (
               <EmptyState
                 icon={<Search className="h-12 w-12 text-gray-300" />}
                 title="No matches found"
-                description={`No read articles match "${searchQuery}"`}
+                description="No read articles match your filters"
               />
             ) : (
               <EmptyState
