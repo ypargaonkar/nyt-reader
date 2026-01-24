@@ -176,13 +176,18 @@ export function normalizeArticle(raw: NYTArticle): Article {
 
   if (raw.multimedia && Array.isArray(raw.multimedia) && raw.multimedia.length > 0) {
     // Priority order for image formats (highest quality first)
+    // NYT API uses both spaced ("Super Jumbo") and camelCase formats
     const formatPriority = [
+      "Super Jumbo",
       "superJumbo",
+      "Jumbo",
       "jumbo",
+      "Super Large",
       "superLarge",
       "Large",
       "large",
       "xlarge",
+      "threeByTwoMediumAt2X",  // 1200px wide
       "mediumThreeByTwo440",
       "popup",
       "mediumThreeByTwo210",
@@ -191,28 +196,29 @@ export function normalizeArticle(raw: NYTArticle): Article {
       "thumbLarge",
     ];
 
-    // Find the best quality image by format priority first
+    // First, try to find best image by dimensions (most reliable)
     let bestImage: typeof raw.multimedia[0] | null = null;
-    let bestPriority = formatPriority.length;
+    let maxPixels = 0;
 
     for (const mm of raw.multimedia) {
-      if ("url" in mm && "format" in mm) {
-        const priority = formatPriority.indexOf(mm.format as string);
-        if (priority !== -1 && priority < bestPriority) {
-          bestPriority = priority;
+      if ("url" in mm && "width" in mm && "height" in mm) {
+        const pixels = (mm.width || 0) * (mm.height || 0);
+        if (pixels > maxPixels) {
+          maxPixels = pixels;
           bestImage = mm;
         }
       }
     }
 
-    // If no format match, fall back to largest image by pixel dimensions
-    if (!bestImage) {
-      let maxPixels = 0;
+    // If no dimensions, fall back to format name matching
+    if (!bestImage || maxPixels < 200000) { // Less than ~450x450
+      let bestPriority = formatPriority.length;
       for (const mm of raw.multimedia) {
-        if ("url" in mm && "width" in mm && "height" in mm) {
-          const pixels = (mm.width || 0) * (mm.height || 0);
-          if (pixels > maxPixels) {
-            maxPixels = pixels;
+        if ("url" in mm && "format" in mm) {
+          const format = mm.format as string;
+          const priority = formatPriority.indexOf(format);
+          if (priority !== -1 && priority < bestPriority) {
+            bestPriority = priority;
             bestImage = mm;
           }
         }
