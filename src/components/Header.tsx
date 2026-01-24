@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, User, Moon, Sun } from "lucide-react";
+import { Settings, User, Moon, Sun, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,10 +13,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SettingsDialog } from "./SettingsDialog";
 import { useAppStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
-export function Header() {
+interface HeaderProps {
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+}
+
+export function Header({ onRefresh, isRefreshing }: HeaderProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { settings, updateSettings } = useAppStore();
+  const { settings, updateSettings, lastRefresh } = useAppStore();
 
   const toggleDarkMode = () => {
     const newMode = !settings.darkMode;
@@ -45,6 +51,20 @@ export function Header() {
 
             {/* Right side actions */}
             <div className="flex items-center gap-2">
+              {/* Refresh button */}
+              {onRefresh && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  className="h-11 w-11 touch-manipulation"
+                  title={lastRefresh ? `Last refreshed: ${new Date(lastRefresh).toLocaleTimeString()}` : "Refresh articles"}
+                >
+                  <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
+                </Button>
+              )}
+
               {/* Dark mode toggle */}
               <Button
                 variant="ghost"
