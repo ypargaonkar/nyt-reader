@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Heart,
@@ -9,6 +9,7 @@ import {
   ExternalLink,
   Compass,
   Sparkles,
+  Newspaper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,8 +42,15 @@ export function DiscoverFeed({
 }: DiscoverFeedProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   const currentArticle = articles[currentIndex];
+
+  // Reset image error state when article changes
+  useEffect(() => {
+    setImageError(false);
+  }, [currentIndex]);
+
   const hasMore = currentIndex < articles.length - 1;
 
   const handleNext = useCallback(() => {
@@ -138,30 +146,35 @@ export function DiscoverFeed({
           {/* Main card with sepia-tinted styling */}
           <div className="bg-amber-50/50 dark:bg-gray-900 border border-amber-200 dark:border-amber-900/50 border-t-0 rounded-b-xl overflow-hidden shadow-lg">
             {/* Hero image with sepia overlay */}
-            {currentArticle.imageUrl && (
-              <div
-                className="relative h-56 bg-amber-100 dark:bg-gray-800 cursor-pointer"
-                onClick={handleOpenArticle}
-              >
-                <img
-                  src={currentArticle.imageUrl}
-                  alt=""
-                  className="w-full h-full object-cover sepia-[.15]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-amber-950/60 via-transparent to-transparent" />
-                <Badge className="absolute top-3 left-3 bg-amber-600 hover:bg-amber-700">
-                  {currentArticle.section}
-                </Badge>
-              </div>
-            )}
+            <div
+              className="relative h-56 bg-amber-100 dark:bg-gray-800 cursor-pointer"
+              onClick={handleOpenArticle}
+            >
+              {currentArticle.imageUrl && !imageError ? (
+                <>
+                  <img
+                    src={currentArticle.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover sepia-[.15]"
+                    onError={() => setImageError(true)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-amber-950/60 via-transparent to-transparent" />
+                </>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 dark:from-gray-800 dark:to-gray-900">
+                  <Newspaper className="w-16 h-16 text-amber-400 dark:text-amber-600 mb-2" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    {currentArticle.section}
+                  </span>
+                </div>
+              )}
+              <Badge className="absolute top-3 left-3 bg-amber-600 hover:bg-amber-700">
+                {currentArticle.section}
+              </Badge>
+            </div>
 
             {/* Content */}
             <div className="p-5">
-              {!currentArticle.imageUrl && (
-                <Badge className="mb-3 bg-amber-600 hover:bg-amber-700">
-                  {currentArticle.section}
-                </Badge>
-              )}
 
               <h2
                 className="font-serif text-xl md:text-2xl font-bold leading-tight mb-3 cursor-pointer hover:text-amber-700 dark:hover:text-amber-400 transition-colors"

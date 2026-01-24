@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Zap,
   ExternalLink,
+  Newspaper,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,110 @@ const sectionColors: Record<string, { bg: string; text: string; accent: string }
 const getSectionColor = (section: string) => {
   return sectionColors[section] || sectionColors["default"];
 };
+
+// Image with fallback placeholder
+function ArticleImage({
+  src,
+  alt,
+  section,
+  className,
+  containerClassName,
+  showOverlay = false,
+  overlayClassName,
+  children,
+}: {
+  src: string | null | undefined;
+  alt: string;
+  section: string;
+  className?: string;
+  containerClassName?: string;
+  showOverlay?: boolean;
+  overlayClassName?: string;
+  children?: React.ReactNode;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const sectionColor = getSectionColor(section);
+
+  // Show fallback if no src or if image failed to load
+  if (!src || hasError) {
+    return (
+      <div className={cn("relative overflow-hidden", containerClassName)}>
+        <div
+          className={cn(
+            "w-full h-full flex flex-col items-center justify-center",
+            "bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900",
+            className
+          )}
+        >
+          <Newspaper className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-2" />
+          <span className={cn("text-xs font-semibold uppercase tracking-wider", sectionColor.text)}>
+            {section}
+          </span>
+        </div>
+        {showOverlay && <div className={overlayClassName} />}
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative overflow-hidden", containerClassName)}>
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        onError={() => setHasError(true)}
+      />
+      {showOverlay && <div className={overlayClassName} />}
+      {children}
+    </div>
+  );
+}
+
+// Hero image with fallback for the main hero article
+function HeroImage({
+  src,
+  alt,
+  section,
+  sectionColor,
+}: {
+  src: string | null | undefined;
+  alt: string;
+  section: string;
+  sectionColor: { bg: string; text: string; accent: string };
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return (
+      <div className="absolute inset-0">
+        <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+          <Newspaper className="w-24 h-24 text-gray-700" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+        <div className={cn("absolute inset-0 bg-gradient-to-br opacity-30", sectionColor.bg)} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0">
+      <img
+        src={src}
+        alt={alt}
+        loading="eager"
+        decoding="async"
+        className="w-full h-full object-cover transition-transform duration-[10s] ease-out group-hover:scale-105"
+        style={{
+          objectPosition: "center 25%",
+        }}
+        onError={() => setHasError(true)}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-20", sectionColor.bg)} />
+    </div>
+  );
+}
 
 // Parse byline to extract journalist names
 function parseByline(byline: string): string[] {
@@ -272,22 +377,12 @@ function HeroArticle({
       }}
     >
       {/* Background Image with Ken Burns effect - focused on upper area for faces */}
-      {article.imageUrl && (
-        <div className="absolute inset-0">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            loading="eager"
-            decoding="async"
-            className="w-full h-full object-cover transition-transform duration-[10s] ease-out group-hover:scale-105"
-            style={{
-              objectPosition: "center 25%", // Focus on upper-center where faces typically are
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-          <div className={cn("absolute inset-0 bg-gradient-to-br opacity-20", sectionColor.bg)} />
-        </div>
-      )}
+      <HeroImage
+        src={article.imageUrl}
+        alt={article.title}
+        section={article.section}
+        sectionColor={sectionColor}
+      />
 
       {/* Content */}
       <div className="relative z-10 p-8 md:p-12 min-h-[450px] md:min-h-[550px] flex flex-col justify-end">
@@ -404,31 +499,30 @@ function FeaturedCard({
       }}
     >
       {/* Image with overlay */}
-      {article.imageUrl && (
-        <div className="relative h-52 overflow-hidden">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          <div className={cn("absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300")} />
-
-          {/* Floating badges */}
-          <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <DateBadge publishedDate={article.publishedDate} />
-            </div>
-            {showRelevanceScore && article.relevanceScore && (
-              <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
-                {article.relevanceScore}% match
-              </Badge>
-            )}
+      <ArticleImage
+        src={article.imageUrl}
+        alt={article.title}
+        section={article.section}
+        containerClassName="h-52"
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        showOverlay
+        overlayClassName="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      >
+        {/* Floating badges */}
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <DateBadge publishedDate={article.publishedDate} />
           </div>
-
-          {/* Section indicator bar */}
-          <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+          {showRelevanceScore && article.relevanceScore && (
+            <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
+              {article.relevanceScore}% match
+            </Badge>
+          )}
         </div>
-      )}
+
+        {/* Section indicator bar */}
+        <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+      </ArticleImage>
 
       {/* Content */}
       <div className="p-5">
@@ -518,24 +612,23 @@ function MiniCard({
       }}
     >
       {/* Image */}
-      {article.imageUrl && (
-        <div className="relative h-40 overflow-hidden">
-          <img
-            src={article.imageUrl}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-            <DateBadge publishedDate={article.publishedDate} />
-            {showRelevanceScore && article.relevanceScore && (
-              <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
-                {article.relevanceScore}%
-              </Badge>
-            )}
-          </div>
-          <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+      <ArticleImage
+        src={article.imageUrl}
+        alt={article.title}
+        section={article.section}
+        containerClassName="h-40"
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+      >
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+          <DateBadge publishedDate={article.publishedDate} />
+          {showRelevanceScore && article.relevanceScore && (
+            <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
+              {article.relevanceScore}%
+            </Badge>
+          )}
         </div>
-      )}
+        <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+      </ArticleImage>
 
       {/* Content */}
       <div className="p-4">
@@ -620,24 +713,23 @@ function ScrollCard({
         window.open(article.url, "_blank");
       }}
     >
-      {article.imageUrl && (
-        <div className="relative h-36 overflow-hidden">
-          <img
-            src={article.imageUrl}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-          <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
-          <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-            <DateBadge publishedDate={article.publishedDate} />
-            {showRelevanceScore && article.relevanceScore && (
-              <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
-                {article.relevanceScore}%
-              </Badge>
-            )}
-          </div>
+      <ArticleImage
+        src={article.imageUrl}
+        alt={article.title}
+        section={article.section}
+        containerClassName="h-36"
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+      >
+        <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
+        <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
+          <DateBadge publishedDate={article.publishedDate} />
+          {showRelevanceScore && article.relevanceScore && (
+            <Badge className="bg-black/50 backdrop-blur-sm text-white text-xs border-0">
+              {article.relevanceScore}%
+            </Badge>
+          )}
         </div>
-      )}
+      </ArticleImage>
 
       <div className="p-4">
         <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>

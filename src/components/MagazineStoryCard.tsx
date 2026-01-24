@@ -57,6 +57,8 @@ export function MagazineStoryCard({
   savedArticleUris = new Set(),
 }: MagazineStoryCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [useOriginal, setUseOriginal] = useState(false);
 
   const timespanStart = new Date(cluster.timespan.start);
   const timespanEnd = new Date(cluster.timespan.end);
@@ -64,9 +66,23 @@ export function MagazineStoryCard({
     (timespanEnd.getTime() - timespanStart.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Get the hero image from the first article with an image (upscaled)
+  // Get the hero image from the first article with an image
   const rawHeroImage = cluster.articles.find((a) => a.imageUrl)?.imageUrl ?? null;
-  const heroImage = getHighResImageUrl(rawHeroImage);
+  const highResImage = getHighResImageUrl(rawHeroImage);
+
+  // Use original if high-res failed, or null if both failed
+  const heroImage = imageError ? null : (useOriginal ? rawHeroImage : highResImage);
+
+  // Handle image load error - first try original, then give up
+  const handleImageError = () => {
+    if (!useOriginal && rawHeroImage !== highResImage) {
+      // First failure: try original image
+      setUseOriginal(true);
+    } else {
+      // Second failure: show placeholder
+      setImageError(true);
+    }
+  };
 
   // Get articles sorted by date (newest first)
   const sortedArticles = [...cluster.articles].sort(
@@ -88,6 +104,7 @@ export function MagazineStoryCard({
               src={heroImage}
               alt={cluster.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={handleImageError}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
@@ -162,32 +179,82 @@ export function MagazineStoryCard({
             </div>
           </div>
         ) : (
-          // Fallback for no image
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 md:p-8">
-            <div className="flex items-center gap-2 mb-3">
-              <Badge className="bg-blue-600 text-white">DEVELOPING</Badge>
-              <span className="text-gray-400 text-sm">
-                {cluster.articles.length} articles
-              </span>
+          // Fallback for no image or failed image
+          <div className="relative aspect-[16/10] md:aspect-[21/9] overflow-hidden rounded-xl bg-gradient-to-br from-gray-800 to-gray-900">
+            {/* Centered icon */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-20">
+              <Newspaper className="w-32 h-32 text-gray-500" />
             </div>
-            <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-3">
-              {cluster.title}
-            </h2>
-            {cluster.summary && (
-              <p className="text-gray-300 text-sm leading-relaxed mb-4 max-w-2xl">
-                {cluster.summary}
-              </p>
-            )}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setExpanded(!expanded);
-              }}
-            >
-              {expanded ? "Hide timeline" : "Read full story"}
-            </Button>
+
+            {/* Content overlay */}
+            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8">
+              {/* Meta badges */}
+              <div className="flex items-center gap-2 mb-3">
+                <Badge className="bg-blue-600/90 text-white border-0">
+                  DEVELOPING
+                </Badge>
+                <span className="text-white/80 text-sm">
+                  {cluster.articles.length} articles
+                </span>
+                {daysDiff > 1 && (
+                  <span className="text-white/80 text-sm">
+                    {daysDiff} days
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h2 className="font-serif text-2xl md:text-4xl font-bold text-white leading-tight mb-3">
+                {cluster.title}
+              </h2>
+
+              {/* Summary */}
+              {cluster.summary && (
+                <p className="text-white/90 text-sm md:text-base leading-relaxed mb-4 max-w-3xl line-clamp-3">
+                  {cluster.summary}
+                </p>
+              )}
+
+              {/* CTA */}
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpanded(!expanded);
+                  }}
+                >
+                  {expanded ? (
+                    <>
+                      <ChevronUp className="w-4 h-4 mr-1" />
+                      Hide timeline
+                    </>
+                  ) : (
+                    <>
+                      Read full story
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+
+                {latestArticle && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(latestArticle.url, "_blank");
+                    }}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    Latest article
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
