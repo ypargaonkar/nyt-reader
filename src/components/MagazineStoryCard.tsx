@@ -16,6 +16,29 @@ import { Badge } from "@/components/ui/badge";
 import type { StoryCluster, Article } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// Upscale NYT image URLs to high resolution
+function getHighResImageUrl(url: string | null): string | null {
+  if (!url) return null;
+
+  const sizeSuffixes = [
+    "thumbStandard",
+    "thumbLarge",
+    "mediumThreeByTwo210",
+    "mediumThreeByTwo440",
+    "articleInline",
+    "articleLarge",
+    "popup",
+  ];
+
+  for (const suffix of sizeSuffixes) {
+    if (url.includes(`-${suffix}.`) || url.includes(`-${suffix}-`)) {
+      return url.replace(`-${suffix}`, "-superJumbo");
+    }
+  }
+
+  return url;
+}
+
 interface MagazineStoryCardProps {
   cluster: StoryCluster;
   onLike?: (uri: string) => void;
@@ -41,8 +64,9 @@ export function MagazineStoryCard({
     (timespanEnd.getTime() - timespanStart.getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  // Get the hero image from the first article with an image
-  const heroImage = cluster.articles.find((a) => a.imageUrl)?.imageUrl;
+  // Get the hero image from the first article with an image (upscaled)
+  const rawHeroImage = cluster.articles.find((a) => a.imageUrl)?.imageUrl;
+  const heroImage = getHighResImageUrl(rawHeroImage);
 
   // Get articles sorted by date (newest first)
   const sortedArticles = [...cluster.articles].sort(
