@@ -117,11 +117,7 @@ export function DiscoverFeed({
   return (
     <div className="min-h-[calc(100vh-200px)] flex flex-col">
       {/* Progress indicator */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
-          <Compass className="h-4 w-4" />
-          <span>Discover</span>
-        </div>
+      <div className="flex items-center justify-end mb-4 px-1">
         <div className="text-sm text-gray-500 dark:text-gray-400">
           {currentIndex + 1} of {articles.length}
         </div>

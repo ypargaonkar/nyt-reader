@@ -102,12 +102,12 @@ export function HamburgerMenu({
 
       {/* Slide-out Panel */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-950 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-72 bg-white dark:bg-gray-950 z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b shrink-0">
           <span className="font-serif text-xl font-bold">
             <span className="text-gray-900 dark:text-white">NYT</span>
             <span className="text-blue-600"> Reader</span>
@@ -122,8 +122,8 @@ export function HamburgerMenu({
           </Button>
         </div>
 
-        {/* Sections */}
-        <div className="overflow-y-auto h-[calc(100%-140px)]">
+        {/* Sections - scrollable */}
+        <div className="flex-1 overflow-y-auto">
           <div className="p-2">
             <p className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Browse Sections
@@ -146,7 +146,7 @@ export function HamburgerMenu({
         </div>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 border-t bg-white dark:bg-gray-950 p-2">
+        <div className="border-t bg-white dark:bg-gray-950 p-2 shrink-0">
           <Link
             href="/profile"
             onClick={() => setIsOpen(false)}
