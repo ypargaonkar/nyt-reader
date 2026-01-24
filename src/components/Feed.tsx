@@ -767,55 +767,81 @@ export function Feed({ onOpenSettings }: FeedProps) {
       );
     };
 
-    // Filter clusters based on search query
-    const filteredClusters = filters.searchQuery
-      ? storyClusters.filter((cluster) => {
-          const query = filters.searchQuery.toLowerCase().trim();
+    // Filter clusters based on filters
+    const filteredClusters = storyClusters.filter((cluster) => {
+      // Quick filter (NEW or TODAY buttons)
+      if (filters.quickFilter === "new") {
+        if (!cluster.articles.some((a) => isNewArticle(a.publishedDate))) return false;
+      } else if (filters.quickFilter === "today") {
+        if (!cluster.articles.some((a) => isTodayArticle(a.publishedDate))) return false;
+      }
 
-          // Special tag searches - check if any article in cluster matches
-          if (query === "new") {
-            return cluster.articles.some((a) => isNewArticle(a.publishedDate));
-          }
-          if (query === "today") {
-            return cluster.articles.some((a) => isTodayArticle(a.publishedDate));
-          }
+      // Section filter
+      if (filters.sections.length > 0) {
+        if (!cluster.articles.some((a) => filters.sections.includes(a.section))) return false;
+      }
 
-          // Regular text search
-          if (cluster.title.toLowerCase().includes(query)) return true;
-          if (cluster.summary?.toLowerCase().includes(query)) return true;
-          if (cluster.keywords.some((kw) => kw.toLowerCase().includes(query))) return true;
-          if (cluster.articles.some((a) => a.title.toLowerCase().includes(query))) return true;
-          return false;
-        })
-      : storyClusters;
+      // Date range filter
+      if (filters.dateRange !== "any") {
+        const now = new Date();
+        const hasMatchingArticle = cluster.articles.some((a) => {
+          const published = new Date(a.publishedDate);
+          if (filters.dateRange === "today") {
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            return published >= today;
+          } else if (filters.dateRange === "week") {
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return published >= weekAgo;
+          } else if (filters.dateRange === "month") {
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return published >= monthAgo;
+          }
+          return true;
+        });
+        if (!hasMatchingArticle) return false;
+      }
+
+      // Search query
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase().trim();
+
+        // Special tag searches
+        if (query === "new") {
+          return cluster.articles.some((a) => isNewArticle(a.publishedDate));
+        }
+        if (query === "today") {
+          return cluster.articles.some((a) => isTodayArticle(a.publishedDate));
+        }
+
+        // Regular text search
+        if (cluster.title.toLowerCase().includes(query)) return true;
+        if (cluster.summary?.toLowerCase().includes(query)) return true;
+        if (cluster.keywords.some((kw) => kw.toLowerCase().includes(query))) return true;
+        if (cluster.articles.some((a) => a.title.toLowerCase().includes(query))) return true;
+        if (cluster.articles.some((a) => a.byline.toLowerCase().includes(query))) return true;
+        return false;
+      }
+
+      return true;
+    });
+
+    // Get unique sections from cluster articles for filter
+    const clusterSections = [...new Set(storyClusters.flatMap((c) => c.articles.map((a) => a.section)))];
 
     return (
       <div className="space-y-4">
-        {/* Search bar for stories */}
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search story clusters..."
-            value={filters.searchQuery}
-            onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-            className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          {filters.searchQuery && (
-            <button
-              onClick={() => setFilters({ ...filters, searchQuery: "" })}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        {/* Search & Filter (same as For You) */}
+        <SearchFilter
+          filters={filters}
+          onFiltersChange={setFilters}
+          availableSections={clusterSections}
+        />
 
         {/* Status bar */}
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 py-2 px-1">
           <span>
             {filteredClusters.length} story clusters
-            {filters.searchQuery && ` (filtered from ${storyClusters.length})`}
+            {(filters.searchQuery || filters.quickFilter) && ` (filtered from ${storyClusters.length})`}
             {" "}from {filteredClusters.reduce((sum, c) => sum + c.articles.length, 0)} articles
           </span>
           <Button
@@ -831,16 +857,16 @@ export function Feed({ onOpenSettings }: FeedProps) {
         </div>
 
         {/* No results */}
-        {filteredClusters.length === 0 && filters.searchQuery && (
+        {filteredClusters.length === 0 && (filters.searchQuery || filters.quickFilter) && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              No clusters match "{filters.searchQuery}"
+              No clusters match your filters
             </p>
             <Button
               variant="outline"
-              onClick={() => setFilters({ ...filters, searchQuery: "" })}
+              onClick={() => setFilters({ ...filters, searchQuery: "", quickFilter: null })}
             >
-              Clear Search
+              Clear Filters
             </Button>
           </div>
         )}
@@ -853,8 +879,12 @@ export function Feed({ onOpenSettings }: FeedProps) {
             onLike={handleLike}
             onSave={handleSave}
             onRead={handleRead}
+            onFollowJournalist={followJournalist}
+            onUnfollowJournalist={unfollowJournalist}
             likedArticleUris={likedArticleUris}
             savedArticleUris={savedArticleUris}
+            readArticleUris={readArticleUris}
+            followedJournalists={followedJournalists}
           />
         ))}
       </div>

@@ -9,7 +9,9 @@ import {
   ExternalLink,
   Heart,
   Bookmark,
-  Newspaper,
+  Check,
+  UserPlus,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,8 +64,12 @@ interface MagazineStoryCardProps {
   onLike?: (uri: string) => void;
   onSave?: (uri: string) => void;
   onRead?: (uri: string) => void;
+  onFollowJournalist?: (name: string) => void;
+  onUnfollowJournalist?: (name: string) => void;
   likedArticleUris?: Set<string>;
   savedArticleUris?: Set<string>;
+  readArticleUris?: Set<string>;
+  followedJournalists?: Set<string>;
 }
 
 export function MagazineStoryCard({
@@ -71,8 +77,12 @@ export function MagazineStoryCard({
   onLike,
   onSave,
   onRead,
+  onFollowJournalist,
+  onUnfollowJournalist,
   likedArticleUris = new Set(),
   savedArticleUris = new Set(),
+  readArticleUris = new Set(),
+  followedJournalists = new Set(),
 }: MagazineStoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   // Track which article's image we're trying (index into articlesWithImages)
@@ -272,8 +282,12 @@ export function MagazineStoryCard({
               onLike={onLike}
               onSave={onSave}
               onRead={onRead}
+              onFollowJournalist={onFollowJournalist}
+              onUnfollowJournalist={onUnfollowJournalist}
               isLiked={likedArticleUris.has(article.uri)}
               isSaved={savedArticleUris.has(article.uri)}
+              isRead={readArticleUris.has(article.uri)}
+              followedJournalists={followedJournalists}
             />
           ))}
 
@@ -296,6 +310,15 @@ export function MagazineStoryCard({
   );
 }
 
+// Extract reporter names from byline
+function extractReporters(byline: string): string[] {
+  // Remove "By " prefix
+  let cleaned = byline.replace(/^By\s+/i, "");
+  // Split on common delimiters
+  const names = cleaned.split(/,\s*|\s+and\s+/i);
+  return names.map((n) => n.trim()).filter((n) => n.length > 0 && !n.includes("@"));
+}
+
 // Timeline article item
 function TimelineArticle({
   article,
@@ -303,24 +326,35 @@ function TimelineArticle({
   onLike,
   onSave,
   onRead,
+  onFollowJournalist,
+  onUnfollowJournalist,
   isLiked,
   isSaved,
+  isRead,
+  followedJournalists = new Set(),
 }: {
   article: Article;
   isLatest: boolean;
   onLike?: (uri: string) => void;
   onSave?: (uri: string) => void;
   onRead?: (uri: string) => void;
+  onFollowJournalist?: (name: string) => void;
+  onUnfollowJournalist?: (name: string) => void;
   isLiked: boolean;
   isSaved: boolean;
+  isRead: boolean;
+  followedJournalists?: Set<string>;
 }) {
+  const reporters = extractReporters(article.byline);
   return (
     <div className="relative pl-6">
       {/* Timeline dot */}
       <div
         className={cn(
           "absolute left-0 top-2 w-3 h-3 rounded-full -translate-x-[7px] border-2",
-          isLatest
+          isRead
+            ? "bg-green-500 border-green-500"
+            : isLatest
             ? "bg-blue-500 border-blue-500"
             : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600"
         )}
@@ -330,10 +364,11 @@ function TimelineArticle({
         className={cn(
           "p-4 rounded-lg transition-colors",
           "hover:bg-gray-50 dark:hover:bg-gray-800/50",
-          isLatest && "bg-blue-50/50 dark:bg-blue-900/10"
+          isLatest && !isRead && "bg-blue-50/50 dark:bg-blue-900/10",
+          isRead && "opacity-70"
         )}
       >
-        {/* Date and latest badge */}
+        {/* Date and badges */}
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {format(new Date(article.publishedDate), "MMM d, h:mm a")}
@@ -343,20 +378,63 @@ function TimelineArticle({
               Latest
             </Badge>
           )}
+          {isRead && (
+            <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+              <Check className="w-3 h-3 mr-0.5" />
+              Read
+            </Badge>
+          )}
         </div>
 
         {/* Title */}
         <h3
-          className="font-medium text-sm md:text-base leading-snug mb-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          className={cn(
+            "font-medium text-sm md:text-base leading-snug mb-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors",
+            isRead && "text-gray-500 dark:text-gray-400"
+          )}
           onClick={() => window.open(article.url, "_blank")}
         >
           {article.title}
         </h3>
 
-        {/* Byline */}
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-          {article.byline}
-        </p>
+        {/* Byline with follow buttons */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
+          {reporters.length > 0 ? (
+            reporters.map((reporter) => {
+              const isFollowing = followedJournalists.has(reporter);
+              return (
+                <button
+                  key={reporter}
+                  onClick={() => {
+                    if (isFollowing) {
+                      onUnfollowJournalist?.(reporter);
+                    } else {
+                      onFollowJournalist?.(reporter);
+                    }
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-colors",
+                    isFollowing
+                      ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  )}
+                  title={isFollowing ? `Unfollow ${reporter}` : `Follow ${reporter}`}
+                >
+                  {isFollowing ? (
+                    <UserCheck className="w-3 h-3" />
+                  ) : (
+                    <UserPlus className="w-3 h-3" />
+                  )}
+                  {reporter}
+                </button>
+              );
+            })
+          ) : (
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {article.byline}
+            </span>
+          )}
+        </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1">
@@ -366,6 +444,7 @@ function TimelineArticle({
               "p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
               isLiked && "text-red-500"
             )}
+            title="Like"
           >
             <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
           </button>
@@ -375,19 +454,24 @@ function TimelineArticle({
               "p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
               isSaved && "text-blue-500"
             )}
+            title="Save"
           >
             <Bookmark className={cn("w-4 h-4", isSaved && "fill-current")} />
           </button>
           <button
             onClick={() => onRead?.(article.uri)}
-            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500"
-            title="Mark as read"
+            className={cn(
+              "p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+              isRead ? "text-green-500" : "text-gray-500"
+            )}
+            title={isRead ? "Marked as read" : "Mark as read"}
           >
-            <Newspaper className="w-4 h-4" />
+            <Check className={cn("w-4 h-4", isRead && "stroke-[3px]")} />
           </button>
           <button
             onClick={() => window.open(article.url, "_blank")}
             className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 ml-auto"
+            title="Open article"
           >
             <ExternalLink className="w-4 h-4" />
           </button>
