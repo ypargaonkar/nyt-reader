@@ -24,7 +24,7 @@ const CACHE_DURATION_MS = 15 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const section = (searchParams.get("section") || "home") as FeedSection;
+  const section = (searchParams.get("section") || "for-you") as FeedSection;
   const forceRefresh = searchParams.get("refresh") === "true";
   const apiKey = request.headers.get("x-nyt-api-key");
   const useCloud = isTursoConfigured();

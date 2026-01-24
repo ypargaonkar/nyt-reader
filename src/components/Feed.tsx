@@ -4,14 +4,15 @@ import { useEffect, useCallback, useState, useRef } from "react";
 import { AlertCircle, Newspaper, Settings, Database, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List } from "lucide-react";
 import { ArticleCard } from "./ArticleCard";
 import { FeedSkeleton } from "./ArticleSkeleton";
-import { StoryClusterCard } from "./StoryCluster";
+import { MagazineStoryCard } from "./MagazineStoryCard";
 import { ArticlePreview } from "./ArticlePreview";
 import { NewspaperLayout } from "./NewspaperLayout";
+import { DiscoverFeed } from "./DiscoverFeed";
 // import { ImmersiveReader } from "./ImmersiveReader"; // Hidden until full article access
 import { SearchFilter, applyFilters, type FilterOptions } from "./SearchFilter";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
-import { rankArticles, categorizeForNewspaper, type NewspaperLayout as LayoutType, type EngagementData } from "@/lib/smart-ranker";
+import { rankArticles, rankForDiscovery, categorizeForNewspaper, type NewspaperLayout as LayoutType, type EngagementData } from "@/lib/smart-ranker";
 import { filterArticlesBySection } from "@/lib/nyt-client";
 import type { Article, FeedSection, StoryCluster } from "@/lib/types";
 
@@ -844,9 +845,9 @@ export function Feed({ onOpenSettings }: FeedProps) {
           </div>
         )}
 
-        {/* Cluster cards */}
+        {/* Magazine-style story cards */}
         {filteredClusters.map((cluster) => (
-          <StoryClusterCard
+          <MagazineStoryCard
             key={cluster.id}
             cluster={cluster}
             onLike={handleLike}
@@ -857,6 +858,26 @@ export function Feed({ onOpenSettings }: FeedProps) {
           />
         ))}
       </div>
+    );
+  }
+
+  // Discover section - high serendipity content
+  if (currentSection === "discover") {
+    const cache = getMasterCache();
+    const discoveryArticles = cache
+      ? rankForDiscovery(cache.articles, profile, readArticleUris)
+      : [];
+
+    return (
+      <DiscoverFeed
+        articles={discoveryArticles}
+        onLike={handleLike}
+        onSave={handleSave}
+        onRead={handleRead}
+        onOpen={handleOpen}
+        likedArticleUris={likedArticleUris}
+        savedArticleUris={savedArticleUris}
+      />
     );
   }
 

@@ -421,6 +421,113 @@ export function categorizeForNewspaper(
   return layout;
 }
 
+// Discovery score - inverts normal ranking to find serendipitous content
+function calculateDiscoveryScore(
+  article: Article,
+  profile: UserProfile
+): { score: number; context: string } {
+  let score = 50; // Start at baseline
+  let context = "";
+
+  // Get user's top sections (most read)
+  const sectionEntries = Object.entries(profile.sections).sort((a, b) => b[1] - a[1]);
+  const topSections = sectionEntries.slice(0, 3).map(([section]) => section);
+  const userSections = new Set(sectionEntries.map(([section]) => section));
+
+  // PENALTY for familiar sections
+  if (topSections.includes(article.section)) {
+    score -= 30;
+    context = `You usually read ${topSections[0]}`;
+  } else if (userSections.has(article.section)) {
+    score -= 10;
+    context = `You sometimes read ${article.section}`;
+  } else {
+    // BONUS for completely new sections
+    score += 25;
+    context = `You usually read ${topSections[0]}. Here's something from ${article.section}.`;
+  }
+
+  // PENALTY for familiar topics
+  let topicFamiliarity = 0;
+  article.keywords.forEach((keyword) => {
+    if (profile.topics[keyword]) {
+      topicFamiliarity += profile.topics[keyword];
+    }
+  });
+  const maxTopicScore = Math.max(...Object.values(profile.topics), 1);
+  const topicPenalty = Math.min((topicFamiliarity / maxTopicScore) * 15, 15);
+  score -= topicPenalty;
+
+  // PENALTY for familiar reporters
+  const bylineWords = article.byline.toLowerCase();
+  Object.keys(profile.reporters).forEach((reporter) => {
+    if (bylineWords.includes(reporter.toLowerCase())) {
+      score -= 10;
+    }
+  });
+
+  // Keep some recency boost for freshness
+  const recencyBoost = calculateRecencyBoost(article) * 0.5;
+  score += recencyBoost;
+
+  // Higher serendipity randomness for more variety
+  const hash = hashToNumber(article.uri);
+  if (hash < 0.5) {
+    score += hash * 20;
+  }
+
+  // Prefer articles with images for better visual experience
+  if (article.imageUrl) {
+    score += 5;
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    context: context || `From ${article.section}`,
+  };
+}
+
+// Rank articles for Discovery feed (high serendipity, outside user patterns)
+export function rankForDiscovery(
+  articles: Article[],
+  profile: UserProfile | null,
+  readArticleUris: Set<string> = new Set()
+): Array<Article & { relevanceScore: number; discoveryContext: string }> {
+  // If no profile, just shuffle and return
+  if (!profile) {
+    const shuffled = [...articles]
+      .filter((a) => !readArticleUris.has(a.uri))
+      .sort(() => hashToNumber(articles[0]?.uri || "seed") - 0.5);
+    return shuffled.slice(0, 30).map((a) => ({
+      ...a,
+      relevanceScore: 50,
+      discoveryContext: `From ${a.section}`,
+    }));
+  }
+
+  // Get user's top sections to exclude/deprioritize
+  const sectionEntries = Object.entries(profile.sections).sort((a, b) => b[1] - a[1]);
+  const topSections = new Set(sectionEntries.slice(0, 2).map(([section]) => section));
+
+  // Score and filter articles
+  const scored = articles
+    .filter((a) => !readArticleUris.has(a.uri))
+    .map((article) => {
+      const { score, context } = calculateDiscoveryScore(article, profile);
+      return {
+        ...article,
+        relevanceScore: Math.round(score),
+        discoveryContext: context,
+      };
+    });
+
+  // Sort by discovery score (highest first)
+  scored.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+  // Return top 30 for discovery feed
+  return scored.slice(0, 30);
+}
+
 // Get ranking explanation for debugging/transparency
 export function explainRanking(article: ScoredArticle): string {
   const factors = article.rankingFactors;

@@ -139,11 +139,12 @@ export interface ApiUsage {
 
 // Feed types
 export type FeedSource = "top-stories" | "times-wire" | "most-popular" | "search";
-export type FeedSection =
-  | "home"
-  | "for-you"
-  | "saved"
-  | "stories"
+
+// Main navigation tabs
+export type MainTab = "stories" | "for-you" | "discover" | "saved";
+
+// Category sections (accessible via hamburger menu)
+export type CategorySection =
   | "politics"
   | "world"
   | "us"
@@ -157,6 +158,8 @@ export type FeedSection =
   | "arts"
   | "books"
   | "magazine";
+
+export type FeedSection = MainTab | CategorySection;
 
 export interface FeedState {
   articles: Article[];

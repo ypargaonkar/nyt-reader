@@ -18,9 +18,10 @@ import { useAppStore } from "@/lib/store";
 interface HeaderProps {
   onRefresh: () => void;
   isRefreshing: boolean;
+  hamburgerMenu?: React.ReactNode;
 }
 
-export function Header({ onRefresh, isRefreshing }: HeaderProps) {
+export function Header({ onRefresh, isRefreshing, hamburgerMenu }: HeaderProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { settings, updateSettings } = useAppStore();
 
@@ -39,13 +40,16 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
       <header className="sticky top-0 z-50 w-full border-b bg-white/95 dark:bg-gray-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-950/60">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="font-serif text-2xl font-bold tracking-tight">
-                <span className="text-gray-900 dark:text-white">NYT</span>
-                <span className="text-blue-600"> Reader</span>
-              </div>
-            </Link>
+            {/* Left side: Hamburger + Logo */}
+            <div className="flex items-center gap-2">
+              {hamburgerMenu}
+              <Link href="/" className="flex items-center gap-2">
+                <div className="font-serif text-2xl font-bold tracking-tight">
+                  <span className="text-gray-900 dark:text-white">NYT</span>
+                  <span className="text-blue-600"> Reader</span>
+                </div>
+              </Link>
+            </div>
 
             {/* Right side actions */}
             <div className="flex items-center gap-2">

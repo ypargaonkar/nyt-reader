@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Header";
 import { SectionTabs } from "@/components/SectionTabs";
+import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { Feed } from "@/components/Feed";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
@@ -61,7 +62,7 @@ export default function Home() {
       clearCache();
 
       const res = await fetch(
-        `/api/articles?section=home&refresh=true`,
+        `/api/articles?section=for-you&refresh=true`,
         {
           headers: {
             "x-nyt-api-key": settings.nytApiKey,
@@ -138,17 +139,22 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleRefresh]);
 
-  // Navigate to profile page
-  const handleProfileClick = () => {
-    router.push("/profile");
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+      <Header
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        hamburgerMenu={
+          <HamburgerMenu
+            currentSection={currentSection}
+            onSectionChange={handleSectionChange}
+            onSettingsClick={() => setSettingsOpen(true)}
+          />
+        }
+      />
 
-      {/* Desktop: Show full section tabs, Mobile: Show condensed tabs */}
-      <div className="md:block">
+      {/* Desktop: Show section tabs, Mobile: Hidden (uses bottom nav) */}
+      <div className="hidden md:block">
         <SectionTabs
           currentSection={currentSection}
           onSectionChange={handleSectionChange}
@@ -170,7 +176,6 @@ export default function Home() {
       <MobileBottomNav
         currentSection={currentSection}
         onSectionChange={handleSectionChange}
-        onProfileClick={handleProfileClick}
       />
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />

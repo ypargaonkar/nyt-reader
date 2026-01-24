@@ -176,41 +176,18 @@ export function ArticleCard({
         {/* Content */}
         <CardContent className="flex-1 p-5">
           <div className="flex flex-col h-full">
-            {/* Section & Relevance */}
+            {/* Section badge - simplified */}
             <div className="flex items-center gap-2 mb-2">
-              {/* Breaking/New indicator for very recent articles */}
-              {differenceInMinutes(new Date(), publishedDate) < 60 && (
-                <Badge className="bg-red-500 text-white text-xs animate-pulse">
-                  NEW
-                </Badge>
-              )}
-              {differenceInMinutes(new Date(), publishedDate) >= 60 && isToday(publishedDate) && (
-                <Badge className="bg-green-500 text-white text-xs">
-                  TODAY
-                </Badge>
-              )}
               <Badge variant="outline" className="text-xs font-medium uppercase">
                 {article.section}
               </Badge>
-              {article.subsection && (
-                <Badge variant="secondary" className="text-xs">
-                  {article.subsection}
-                </Badge>
-              )}
-              {showRelevanceScore && article.relevanceScore && (
-                <Badge
-                  variant="default"
-                  className={cn(
-                    "ml-auto text-xs",
-                    article.relevanceScore >= 70
-                      ? "bg-green-600"
-                      : article.relevanceScore >= 40
-                      ? "bg-yellow-600"
-                      : "bg-gray-500"
-                  )}
+              {showRelevanceScore && article.relevanceScore && article.relevanceScore >= 60 && (
+                <span
+                  className="ml-auto text-xs text-gray-500 dark:text-gray-400"
+                  title={`${article.relevanceScore}% match based on your reading history`}
                 >
-                  {article.relevanceScore}% match
-                </Badge>
+                  For you
+                </span>
               )}
             </div>
 
@@ -276,28 +253,23 @@ export function ArticleCard({
               )}
             </div>
 
-            {/* Keywords */}
+            {/* Primary keyword - simplified */}
             {article.keywords.length > 0 && (
-              <div className="flex flex-wrap gap-1 mb-4">
-                {article.keywords.slice(0, 3).map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300"
-                  >
-                    {keyword}
-                  </span>
-                ))}
+              <div className="mb-3">
+                <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300">
+                  {article.keywords[0]}
+                </span>
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 mt-auto pt-2 border-t">
+            {/* Actions - compact icons */}
+            <div className="flex items-center gap-1 mt-auto pt-2 border-t">
               {/* Selection checkbox for bulk mode */}
               {isSelectable && (
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="gap-1.5"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={(e) => {
                     e.stopPropagation();
                     onSelect?.(article.uri);
@@ -312,55 +284,50 @@ export function ArticleCard({
               )}
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 className={cn(
-                  "gap-1.5",
+                  "h-8 w-8",
                   liked && "text-red-500 hover:text-red-600"
                 )}
                 onClick={handleLike}
+                title={liked ? "Unlike" : "Like"}
               >
-                <Heart
-                  className={cn("w-4 h-4", liked && "fill-current")}
-                />
-                {liked ? "Liked" : "Like"}
+                <Heart className={cn("w-4 h-4", liked && "fill-current")} />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 className={cn(
-                  "gap-1.5",
+                  "h-8 w-8",
                   saved && "text-blue-500 hover:text-blue-600"
                 )}
                 onClick={handleSave}
+                title={saved ? "Unsave" : "Save"}
               >
-                <Bookmark
-                  className={cn("w-4 h-4", saved && "fill-current")}
-                />
-                {saved ? "Saved" : "Save"}
+                <Bookmark className={cn("w-4 h-4", saved && "fill-current")} />
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className="gap-1.5"
+                size="icon"
+                className="h-8 w-8"
                 onClick={handleMarkRead}
+                title="Mark as read"
               >
                 <Check className="w-4 h-4" />
-                Mark Read
               </Button>
-              {/* Share/Copy button */}
               <Button
                 variant="ghost"
-                size="sm"
-                className={cn("gap-1.5 ml-auto", copied && "text-green-500")}
+                size="icon"
+                className={cn("h-8 w-8 ml-auto", copied && "text-green-500")}
                 onClick={async (e) => {
                   e.stopPropagation();
                   await navigator.clipboard.writeText(article.url);
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
+                title={copied ? "Copied!" : "Copy link"}
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copied!" : "Share"}
               </Button>
             </div>
           </div>

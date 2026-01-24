@@ -14,8 +14,8 @@ let minuteStartTime = Date.now();
 
 // Section keywords for filtering
 const SECTION_FILTERS: Record<FeedSection, (article: Article) => boolean> = {
-  home: () => true, // Show all
   "for-you": () => true, // Will be sorted by relevance score
+  discover: () => true, // Will be sorted by inverse relevance (serendipity)
   saved: () => true, // Handled separately in Feed.tsx
   stories: () => true, // Handled separately in Feed.tsx
   politics: (a) =>

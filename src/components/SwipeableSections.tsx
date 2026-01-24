@@ -2,42 +2,21 @@
 
 import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { FeedSection } from "@/lib/types";
+import type { FeedSection, MainTab } from "@/lib/types";
 
-const sectionOrder: FeedSection[] = [
-  "home",
-  "for-you",
-  "saved",
+// Only swipe between main tabs
+const sectionOrder: MainTab[] = [
   "stories",
-  "politics",
-  "world",
-  "us",
-  "opinion",
-  "science",
-  "technology",
-  "climate",
-  "business",
-  "arts",
+  "for-you",
+  "discover",
+  "saved",
 ];
 
-const sectionLabels: Record<FeedSection, string> = {
-  "home": "Home",
-  "for-you": "For You",
-  "saved": "Saved",
+const sectionLabels: Record<MainTab, string> = {
   "stories": "Stories",
-  "politics": "Politics",
-  "world": "World",
-  "us": "U.S.",
-  "opinion": "Opinion",
-  "science": "Science",
-  "technology": "Tech",
-  "climate": "Climate",
-  "graphics": "Graphics",
-  "investigative": "Investigative",
-  "business": "Business",
-  "arts": "Arts",
-  "books": "Books",
-  "magazine": "Magazine",
+  "for-you": "For You",
+  "discover": "Discover",
+  "saved": "Saved",
 };
 
 interface SwipeableSectionsProps {
@@ -53,7 +32,7 @@ export function SwipeableSections({
 }: SwipeableSectionsProps) {
   const [indicator, setIndicator] = useState<{
     direction: "left" | "right";
-    section: FeedSection;
+    section: MainTab;
     progress: number;
   } | null>(null);
 
@@ -62,9 +41,11 @@ export function SwipeableSections({
   const isTracking = useRef(false);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
 
-  const currentIndex = sectionOrder.indexOf(currentSection);
+  // Only allow swiping between main tabs
+  const isMainTab = sectionOrder.includes(currentSection as MainTab);
+  const currentIndex = isMainTab ? sectionOrder.indexOf(currentSection as MainTab) : -1;
   const prevSection = currentIndex > 0 ? sectionOrder[currentIndex - 1] : null;
-  const nextSection = currentIndex < sectionOrder.length - 1 ? sectionOrder[currentIndex + 1] : null;
+  const nextSection = currentIndex >= 0 && currentIndex < sectionOrder.length - 1 ? sectionOrder[currentIndex + 1] : null;
 
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {

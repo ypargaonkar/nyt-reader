@@ -83,7 +83,7 @@ export const useAppStore = create<AppState>()(
       // Initial state
       masterCache: null,
       filteredArticles: [],
-      currentSection: "home",
+      currentSection: "for-you",
       loading: false,
       error: null,
       lastRefresh: null,
