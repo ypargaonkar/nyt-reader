@@ -16,23 +16,41 @@ import { Badge } from "@/components/ui/badge";
 import type { StoryCluster, Article } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// Upscale NYT image URLs to high resolution
-function getHighResImageUrl(url: string | null): string | null {
+// NYT image size suffixes from largest to smallest
+const IMAGE_SIZES = [
+  "superJumbo",
+  "jumbo",
+  "videoSixteenByNineJumbo",
+  "facebookJumbo",
+  "articleLarge",
+  "mediumThreeByTwo440",
+  "mediumThreeByTwo210",
+  "thumbLarge",
+  "thumbStandard",
+] as const;
+
+// Known size suffixes that appear in URLs
+const KNOWN_SUFFIXES = [
+  "thumbStandard",
+  "thumbLarge",
+  "mediumThreeByTwo210",
+  "mediumThreeByTwo440",
+  "articleInline",
+  "articleLarge",
+  "popup",
+  "superJumbo",
+  "jumbo",
+  "videoSixteenByNineJumbo",
+  "facebookJumbo",
+];
+
+// Get image URL with specific size
+function getImageUrlWithSize(url: string | null, targetSize: string): string | null {
   if (!url) return null;
 
-  const sizeSuffixes = [
-    "thumbStandard",
-    "thumbLarge",
-    "mediumThreeByTwo210",
-    "mediumThreeByTwo440",
-    "articleInline",
-    "articleLarge",
-    "popup",
-  ];
-
-  for (const suffix of sizeSuffixes) {
+  for (const suffix of KNOWN_SUFFIXES) {
     if (url.includes(`-${suffix}.`) || url.includes(`-${suffix}-`)) {
-      return url.replace(`-${suffix}`, "-superJumbo");
+      return url.replace(`-${suffix}`, `-${targetSize}`);
     }
   }
 
@@ -58,9 +76,9 @@ export function MagazineStoryCard({
 }: MagazineStoryCardProps) {
   const [expanded, setExpanded] = useState(false);
   // Track which article's image we're trying (index into articlesWithImages)
-  const [imageIndex, setImageIndex] = useState(0);
-  // Track if we're trying original vs high-res for current image
-  const [useOriginal, setUseOriginal] = useState(false);
+  const [articleIndex, setArticleIndex] = useState(0);
+  // Track which size we're trying for the current article (index into IMAGE_SIZES)
+  const [sizeIndex, setSizeIndex] = useState(0);
 
   const timespanStart = new Date(cluster.timespan.start);
   const timespanEnd = new Date(cluster.timespan.end);
@@ -71,29 +89,29 @@ export function MagazineStoryCard({
   // Get all articles that have images
   const articlesWithImages = cluster.articles.filter((a) => a.imageUrl);
 
-  // Get current image to try
-  const currentArticleWithImage = articlesWithImages[imageIndex];
-  const rawImage = currentArticleWithImage?.imageUrl ?? null;
-  const highResImage = getHighResImageUrl(rawImage);
+  // Get current article and its raw image URL
+  const currentArticle = articlesWithImages[articleIndex];
+  const rawImage = currentArticle?.imageUrl ?? null;
 
-  // Determine which URL to use
-  const heroImage = rawImage ? (useOriginal ? rawImage : highResImage) : null;
+  // Get current image URL with the current size from cascade
+  const currentSize = IMAGE_SIZES[sizeIndex];
+  const heroImage = rawImage ? getImageUrlWithSize(rawImage, currentSize) : null;
 
-  // Are we using a fallback image (not the first one)?
-  const isUsingFallbackImage = imageIndex > 0 && heroImage;
+  // Are we using a fallback image (not the first article)?
+  const isUsingFallbackImage = articleIndex > 0 && heroImage;
 
-  // No images available at all
-  const noImagesAvailable = articlesWithImages.length === 0 || imageIndex >= articlesWithImages.length;
+  // No images available at all (exhausted all articles)
+  const noImagesAvailable = articlesWithImages.length === 0 || articleIndex >= articlesWithImages.length;
 
-  // Handle image load error - try original, then next article's image
+  // Handle image load error - cascade through sizes, then articles
   const handleImageError = () => {
-    if (!useOriginal && rawImage !== highResImage) {
-      // First: try original resolution of current image
-      setUseOriginal(true);
+    if (sizeIndex < IMAGE_SIZES.length - 1) {
+      // Try next smaller size for current article
+      setSizeIndex((prev) => prev + 1);
     } else {
-      // Try next article's image
-      setUseOriginal(false);
-      setImageIndex((prev) => prev + 1);
+      // All sizes failed for this article, try next article from the beginning
+      setSizeIndex(0);
+      setArticleIndex((prev) => prev + 1);
     }
   };
 

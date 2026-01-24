@@ -41,7 +41,45 @@ const getSectionColor = (section: string) => {
   return sectionColors[section] || sectionColors["default"];
 };
 
-// Image with fallback placeholder
+// NYT image size suffixes from largest to smallest for fallback cascade
+const IMAGE_SIZES = [
+  "superJumbo",
+  "jumbo",
+  "videoSixteenByNineJumbo",
+  "facebookJumbo",
+  "articleLarge",
+  "mediumThreeByTwo440",
+  "mediumThreeByTwo210",
+  "thumbLarge",
+  "thumbStandard",
+] as const;
+
+// Known size suffixes that appear in URLs
+const KNOWN_SUFFIXES = [
+  "thumbStandard",
+  "thumbLarge",
+  "mediumThreeByTwo210",
+  "mediumThreeByTwo440",
+  "articleInline",
+  "articleLarge",
+  "popup",
+  "superJumbo",
+  "jumbo",
+  "videoSixteenByNineJumbo",
+  "facebookJumbo",
+];
+
+// Get image URL with specific size
+function getImageUrlWithSize(url: string, targetSize: string): string {
+  for (const suffix of KNOWN_SUFFIXES) {
+    if (url.includes(`-${suffix}.`) || url.includes(`-${suffix}-`)) {
+      return url.replace(`-${suffix}`, `-${targetSize}`);
+    }
+  }
+  return url;
+}
+
+// Image with fallback placeholder and size cascade
 function ArticleImage({
   src,
   alt,
@@ -61,11 +99,25 @@ function ArticleImage({
   overlayClassName?: string;
   children?: React.ReactNode;
 }) {
-  const [hasError, setHasError] = useState(false);
+  const [sizeIndex, setSizeIndex] = useState(0);
+  const [allFailed, setAllFailed] = useState(false);
   const sectionColor = getSectionColor(section);
 
-  // Show fallback if no src or if image failed to load
-  if (!src || hasError) {
+  // Get current image URL with cascaded size
+  const currentSize = IMAGE_SIZES[sizeIndex];
+  const imageUrl = src ? getImageUrlWithSize(src, currentSize) : null;
+
+  // Handle image error - try next size
+  const handleError = () => {
+    if (sizeIndex < IMAGE_SIZES.length - 1) {
+      setSizeIndex((prev) => prev + 1);
+    } else {
+      setAllFailed(true);
+    }
+  };
+
+  // Show fallback if no src or all sizes failed
+  if (!src || allFailed) {
     return (
       <div className={cn("relative overflow-hidden", containerClassName)}>
         <div
@@ -89,10 +141,10 @@ function ArticleImage({
   return (
     <div className={cn("relative overflow-hidden", containerClassName)}>
       <img
-        src={src}
+        src={imageUrl!}
         alt={alt}
         className={className}
-        onError={() => setHasError(true)}
+        onError={handleError}
       />
       {showOverlay && <div className={overlayClassName} />}
       {children}
@@ -100,7 +152,7 @@ function ArticleImage({
   );
 }
 
-// Hero image with fallback for the main hero article
+// Hero image with fallback for the main hero article and size cascade
 function HeroImage({
   src,
   alt,
@@ -112,9 +164,23 @@ function HeroImage({
   section: string;
   sectionColor: { bg: string; text: string; accent: string };
 }) {
-  const [hasError, setHasError] = useState(false);
+  const [sizeIndex, setSizeIndex] = useState(0);
+  const [allFailed, setAllFailed] = useState(false);
 
-  if (!src || hasError) {
+  // Get current image URL with cascaded size
+  const currentSize = IMAGE_SIZES[sizeIndex];
+  const imageUrl = src ? getImageUrlWithSize(src, currentSize) : null;
+
+  // Handle image error - try next size
+  const handleError = () => {
+    if (sizeIndex < IMAGE_SIZES.length - 1) {
+      setSizeIndex((prev) => prev + 1);
+    } else {
+      setAllFailed(true);
+    }
+  };
+
+  if (!src || allFailed) {
     return (
       <div className="absolute inset-0">
         <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
@@ -129,7 +195,7 @@ function HeroImage({
   return (
     <div className="absolute inset-0">
       <img
-        src={src}
+        src={imageUrl!}
         alt={alt}
         loading="eager"
         decoding="async"
@@ -137,7 +203,7 @@ function HeroImage({
         style={{
           objectPosition: "center 25%",
         }}
-        onError={() => setHasError(true)}
+        onError={handleError}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
       <div className={cn("absolute inset-0 bg-gradient-to-br opacity-20", sectionColor.bg)} />
