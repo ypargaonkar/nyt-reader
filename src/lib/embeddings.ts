@@ -271,6 +271,58 @@ export function sortClustersByRelevance(
   return scored.map((s) => s.cluster);
 }
 
+// Sort clusters by recency - most recently updated stories first
+export function sortClustersByRecency(clusters: StoryCluster[]): StoryCluster[] {
+  const now = new Date().getTime();
+  const ONE_HOUR = 60 * 60 * 1000;
+  const ONE_DAY = 24 * ONE_HOUR;
+
+  const scored = clusters.map((cluster) => {
+    // Get most recent article date
+    const mostRecentDate = Math.max(
+      ...cluster.articles.map((a) => new Date(a.publishedDate).getTime())
+    );
+
+    // Count articles from last hour (developing story indicator)
+    const recentArticles = cluster.articles.filter((a) => {
+      const articleTime = new Date(a.publishedDate).getTime();
+      return now - articleTime < ONE_HOUR;
+    }).length;
+
+    // Count articles from today
+    const todayArticles = cluster.articles.filter((a) => {
+      const articleTime = new Date(a.publishedDate).getTime();
+      return now - articleTime < ONE_DAY;
+    }).length;
+
+    // Calculate recency score:
+    // - Primary: most recent article timestamp (higher = more recent)
+    // - Bonus for having multiple recent articles (developing story)
+    // - Bonus for cluster size (bigger stories are more significant)
+    let score = mostRecentDate;
+
+    // Developing story bonus: multiple articles in last hour
+    if (recentArticles >= 2) {
+      score += recentArticles * ONE_HOUR; // Boost by 1 hour per recent article
+    }
+
+    // Active today bonus
+    if (todayArticles >= 3) {
+      score += todayArticles * (ONE_HOUR / 2); // Boost by 30 min per today article
+    }
+
+    // Cluster size gives a small boost (significant stories)
+    score += cluster.articles.length * (ONE_HOUR / 6); // 10 min per article
+
+    return { cluster, score, mostRecentDate, recentArticles, todayArticles };
+  });
+
+  // Sort by score (highest first = most recent/developing)
+  scored.sort((a, b) => b.score - a.score);
+
+  return scored.map((s) => s.cluster);
+}
+
 // Find related articles for a given article
 export function findRelatedArticles(
   articleUri: string,

@@ -6,8 +6,6 @@ import {
   saveCluster,
   clearClusters,
   getCachedArticle,
-  getProfileEntries,
-  getFollowedJournalists,
 } from "@/lib/db";
 import {
   getAllEmbeddingsCloud,
@@ -16,12 +14,9 @@ import {
   saveClusterCloud,
   clearClustersCloud,
   getCachedArticleCloud,
-  getProfileEntriesCloud,
-  getFollowedJournalistsCloud,
 } from "@/lib/db-cloud";
 import { isTursoConfigured } from "@/lib/turso";
-import { clusterArticles, generateClusterTitleAndSummary, sortClustersByRelevance } from "@/lib/embeddings";
-import type { UserProfile } from "@/lib/types";
+import { clusterArticles, generateClusterTitleAndSummary, sortClustersByRecency } from "@/lib/embeddings";
 import type { Article, StoryCluster } from "@/lib/types";
 
 export async function GET() {
@@ -67,54 +62,8 @@ export async function GET() {
       (c) => c.articles.length >= 2
     );
 
-    // Build user profile for relevance sorting
-    const profileEntries = useCloud
-      ? await getProfileEntriesCloud()
-      : getProfileEntries();
-    const followedJournalists = new Set(
-      useCloud
-        ? await getFollowedJournalistsCloud()
-        : getFollowedJournalists()
-    );
-
-    const profile: UserProfile = {
-      sections: {},
-      reporters: {},
-      topics: {},
-      organizations: {},
-      locations: {},
-      materialTypes: {},
-      preferredWordCount: { min: 0, max: 10000 },
-      prefersMultimedia: 0,
-      prefersInteractive: 0,
-      totalLikes: 0,
-      lastAnalyzed: null,
-      aiInsights: null,
-    };
-
-    // Populate profile from entries
-    for (const entry of profileEntries) {
-      switch (entry.category) {
-        case "section":
-          profile.sections[entry.value] = entry.score;
-          break;
-        case "reporter":
-          profile.reporters[entry.value] = entry.score;
-          break;
-        case "topic":
-          profile.topics[entry.value] = entry.score;
-          break;
-        case "organization":
-          profile.organizations[entry.value] = entry.score;
-          break;
-        case "location":
-          profile.locations[entry.value] = entry.score;
-          break;
-      }
-    }
-
-    // Sort clusters by relevance to user profile
-    clusters = sortClustersByRelevance(clusters, profile, followedJournalists);
+    // Sort clusters by recency (most recent/developing stories first)
+    clusters = sortClustersByRecency(clusters);
 
     return NextResponse.json({ clusters });
   } catch (error) {
