@@ -20,6 +20,7 @@ interface ArticleCardProps {
   onSelect?: (uri: string) => void;
   isLiked?: boolean;
   isSaved?: boolean;
+  isRead?: boolean;
   isSelected?: boolean;
   isSelectable?: boolean;
   isChecked?: boolean;
@@ -54,6 +55,7 @@ export function ArticleCard({
   onSelect,
   isLiked = false,
   isSaved = false,
+  isRead = false,
   isSelected = false,
   isSelectable = false,
   isChecked = false,
@@ -309,11 +311,14 @@ export function ArticleCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className={cn(
+                  "h-8 w-8",
+                  isRead && "text-green-500 hover:text-green-600"
+                )}
                 onClick={handleMarkRead}
-                title="Mark as read"
+                title={isRead ? "Already read" : "Mark as read"}
               >
-                <Check className="w-4 h-4" />
+                <Check className={cn("w-4 h-4", isRead && "fill-current")} />
               </Button>
               <Button
                 variant="ghost"

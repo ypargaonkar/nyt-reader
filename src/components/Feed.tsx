@@ -907,7 +907,8 @@ export function Feed({ onOpenSettings }: FeedProps) {
                 onOpen={handleOpen}
                 onFollowJournalist={handleFollowJournalist}
                 onPreview={handlePreview}
-                isLiked={likedArticleUris.has(article.uri)}
+                isLiked={historyTab === "liked" || likedArticleUris.has(article.uri)}
+                isRead={historyTab === "read" || readArticleUris.has(article.uri)}
                 isSaved={savedArticleUris.has(article.uri)}
                 isSelected={false}
                 isSelectable={false}

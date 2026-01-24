@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, User, History, RefreshCw, Moon, Sun } from "lucide-react";
+import { Settings, User, RefreshCw, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SettingsDialog } from "./SettingsDialog";
-import { ApiUsageIndicator } from "./ApiUsageIndicator";
 import { useAppStore } from "@/lib/store";
 
 interface HeaderProps {
@@ -51,9 +50,6 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
 
             {/* Right side actions */}
             <div className="flex items-center gap-2">
-              {/* API Usage */}
-              <ApiUsageIndicator />
-
               {/* Refresh */}
               <Button
                 variant="ghost"
@@ -93,12 +89,6 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                     <Link href="/profile" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
                       My Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/history" className="cursor-pointer">
-                      <History className="mr-2 h-4 w-4" />
-                      Reading History
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
