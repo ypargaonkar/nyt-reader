@@ -116,6 +116,45 @@ const SECTION_FILTERS: Record<FeedSection, (article: Article) => boolean> = {
   magazine: (a) =>
     a.section.toLowerCase() === "magazine" ||
     a.desk.toLowerCase() === "magazine",
+  sports: (a) =>
+    a.section.toLowerCase() === "sports" ||
+    a.desk.toLowerCase().includes("sports"),
+  health: (a) =>
+    a.section.toLowerCase() === "health" ||
+    a.section.toLowerCase() === "well" ||
+    a.desk.toLowerCase().includes("health"),
+  food: (a) =>
+    a.section.toLowerCase() === "food" ||
+    a.section.toLowerCase() === "dining" ||
+    a.desk.toLowerCase().includes("food"),
+  travel: (a) =>
+    a.section.toLowerCase() === "travel" ||
+    a.desk.toLowerCase().includes("travel"),
+  realestate: (a) =>
+    a.section.toLowerCase() === "realestate" ||
+    a.section.toLowerCase() === "real estate" ||
+    a.desk.toLowerCase().includes("real estate"),
+  fashion: (a) =>
+    a.section.toLowerCase() === "fashion" ||
+    a.section.toLowerCase() === "style" ||
+    a.section.toLowerCase() === "t magazine" ||
+    a.desk.toLowerCase().includes("fashion") ||
+    a.desk.toLowerCase().includes("style"),
+  movies: (a) =>
+    a.section.toLowerCase() === "movies" ||
+    a.subsection?.toLowerCase() === "movies" ||
+    a.desk.toLowerCase().includes("movie") ||
+    a.keywords.some((k) => k.toLowerCase() === "movies"),
+  theater: (a) =>
+    a.section.toLowerCase() === "theater" ||
+    a.subsection?.toLowerCase() === "theater" ||
+    a.desk.toLowerCase().includes("theater") ||
+    a.keywords.some((k) => k.toLowerCase() === "theater"),
+  nyregion: (a) =>
+    a.section.toLowerCase() === "nyregion" ||
+    a.section.toLowerCase() === "new york" ||
+    a.section.toLowerCase() === "ny" ||
+    a.desk.toLowerCase().includes("metro"),
 };
 
 // Attempt to get a higher resolution version of an NYT image URL

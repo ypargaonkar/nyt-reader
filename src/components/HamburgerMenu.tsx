@@ -21,6 +21,15 @@ import {
   User,
   Settings,
   History,
+  Trophy,
+  Heart,
+  UtensilsCrossed,
+  Plane,
+  Home,
+  Shirt,
+  Film,
+  Theater,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { FeedSection, CategorySection } from "@/lib/types";
@@ -32,19 +41,31 @@ interface HamburgerMenuProps {
 }
 
 const categoryItems: { id: CategorySection; label: string; icon: React.ReactNode }[] = [
+  // News
   { id: "politics", label: "Politics", icon: <Vote className="h-5 w-5" /> },
   { id: "world", label: "World", icon: <Globe className="h-5 w-5" /> },
   { id: "us", label: "U.S.", icon: <Flag className="h-5 w-5" /> },
+  { id: "nyregion", label: "NY Region", icon: <MapPin className="h-5 w-5" /> },
   { id: "business", label: "Business", icon: <Building2 className="h-5 w-5" /> },
   { id: "technology", label: "Tech", icon: <Cpu className="h-5 w-5" /> },
   { id: "science", label: "Science", icon: <FlaskConical className="h-5 w-5" /> },
   { id: "climate", label: "Climate", icon: <Leaf className="h-5 w-5" /> },
+  { id: "health", label: "Health", icon: <Heart className="h-5 w-5" /> },
+  { id: "sports", label: "Sports", icon: <Trophy className="h-5 w-5" /> },
+  // Opinion & Analysis
   { id: "opinion", label: "Opinion", icon: <MessageSquare className="h-5 w-5" /> },
-  { id: "arts", label: "Arts", icon: <Palette className="h-5 w-5" /> },
-  { id: "books", label: "Books", icon: <BookOpen className="h-5 w-5" /> },
-  { id: "magazine", label: "Magazine", icon: <Newspaper className="h-5 w-5" /> },
-  { id: "graphics", label: "Graphics", icon: <BarChart3 className="h-5 w-5" /> },
   { id: "investigative", label: "Investigative", icon: <Search className="h-5 w-5" /> },
+  { id: "graphics", label: "Graphics", icon: <BarChart3 className="h-5 w-5" /> },
+  // Culture & Lifestyle
+  { id: "arts", label: "Arts", icon: <Palette className="h-5 w-5" /> },
+  { id: "movies", label: "Movies", icon: <Film className="h-5 w-5" /> },
+  { id: "theater", label: "Theater", icon: <Theater className="h-5 w-5" /> },
+  { id: "books", label: "Books", icon: <BookOpen className="h-5 w-5" /> },
+  { id: "food", label: "Food", icon: <UtensilsCrossed className="h-5 w-5" /> },
+  { id: "travel", label: "Travel", icon: <Plane className="h-5 w-5" /> },
+  { id: "fashion", label: "Fashion", icon: <Shirt className="h-5 w-5" /> },
+  { id: "realestate", label: "Real Estate", icon: <Home className="h-5 w-5" /> },
+  { id: "magazine", label: "Magazine", icon: <Newspaper className="h-5 w-5" /> },
 ];
 
 export function HamburgerMenu({

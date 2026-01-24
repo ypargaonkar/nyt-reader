@@ -157,7 +157,16 @@ export type CategorySection =
   | "business"
   | "arts"
   | "books"
-  | "magazine";
+  | "magazine"
+  | "sports"
+  | "health"
+  | "food"
+  | "travel"
+  | "realestate"
+  | "fashion"
+  | "movies"
+  | "theater"
+  | "nyregion";
 
 export type FeedSection = MainTab | CategorySection;
 

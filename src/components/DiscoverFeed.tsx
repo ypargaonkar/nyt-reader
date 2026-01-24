@@ -147,7 +147,7 @@ export function DiscoverFeed({
           <div className="bg-amber-50/50 dark:bg-gray-900 border border-amber-200 dark:border-amber-900/50 border-t-0 rounded-b-xl overflow-hidden shadow-lg">
             {/* Hero image with sepia overlay */}
             <div
-              className="relative h-56 bg-amber-100 dark:bg-gray-800 cursor-pointer"
+              className="relative h-72 md:h-80 bg-amber-100 dark:bg-gray-800 cursor-pointer"
               onClick={handleOpenArticle}
             >
               {currentArticle.imageUrl && !imageError ? (
