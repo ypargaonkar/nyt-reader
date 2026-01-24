@@ -970,6 +970,19 @@ export function Feed({ onOpenSettings }: FeedProps) {
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 ml-auto">
             <Database className="h-4 w-4" />
             <span>{masterCache?.articles.length || 0} cached</span>
+            {masterCache?.fetchedAt && (
+              <span className="text-xs">
+                (refreshed {(() => {
+                  const mins = Math.floor((Date.now() - masterCache.fetchedAt) / 60000);
+                  if (mins < 1) return "just now";
+                  if (mins === 1) return "1m ago";
+                  if (mins < 60) return `${mins}m ago`;
+                  const hrs = Math.floor(mins / 60);
+                  if (hrs === 1) return "1h ago";
+                  return `${hrs}h ago`;
+                })()})
+              </span>
+            )}
             <Button
               variant="link"
               size="sm"
