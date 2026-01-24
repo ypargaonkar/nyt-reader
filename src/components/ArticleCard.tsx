@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow, format, isToday, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
 import { Heart, Check, Clock, UserPlus, UserCheck, Bookmark, Copy, Square, CheckSquare, Calendar, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,6 +67,14 @@ export function ArticleCard({
   const [saved, setSaved] = useState(isSaved);
   const [copied, setCopied] = useState(false);
   const [localFollowed, setLocalFollowed] = useState<Set<string>>(new Set());
+
+  // Sync local state when article changes
+  useEffect(() => {
+    setLiked(isLiked);
+    setSaved(isSaved);
+    setIsRemoving(false);
+    setCopied(false);
+  }, [article.uri, isLiked, isSaved]);
 
   const journalists = parseByline(article.byline);
 

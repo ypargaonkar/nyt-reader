@@ -364,6 +364,12 @@ function ActionButtons({
   const [liked, setLiked] = useState(isLiked);
   const [saved, setSaved] = useState(isSaved);
 
+  // Sync local state when article changes
+  useEffect(() => {
+    setLiked(isLiked);
+    setSaved(isSaved);
+  }, [article.uri, isLiked, isSaved]);
+
   // Mobile-friendly touch targets (min 44px)
   const buttonSize = {
     sm: "p-2 md:p-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
