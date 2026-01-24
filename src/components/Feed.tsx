@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/lib/store";
 import { rankArticles, rankForDiscovery, categorizeForNewspaper, type NewspaperLayout as LayoutType, type EngagementData } from "@/lib/smart-ranker";
 import { filterArticlesBySection } from "@/lib/nyt-client";
+import { useAutoScheduler } from "@/lib/useAutoScheduler";
 import type { Article, FeedSection, StoryCluster } from "@/lib/types";
 
 interface FeedProps {
@@ -322,6 +323,63 @@ export function Feed({ onOpenSettings }: FeedProps) {
       setClustersLoading(false);
     }
   }, [settings.openaiApiKey, fetchClusters, checkEmbeddingsStatus]);
+
+  // Auto-scheduled task handlers (silent, no loading state for background tasks)
+  const scheduledEmbeddings = useCallback(async () => {
+    if (!settings.openaiApiKey) return;
+    try {
+      await fetch("/api/embeddings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ openaiApiKey: settings.openaiApiKey }),
+      });
+    } catch (error) {
+      console.error("[Scheduled] Failed to generate embeddings:", error);
+    }
+  }, [settings.openaiApiKey]);
+
+  const scheduledStoryRebuild = useCallback(async () => {
+    if (!settings.openaiApiKey) return;
+    try {
+      const res = await fetch("/api/clusters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          openaiApiKey: settings.openaiApiKey,
+          generateSummaries: true,
+        }),
+      });
+      if (res.ok) {
+        // Silently refresh clusters if on stories tab
+        if (currentSection === "stories") {
+          await fetchClusters();
+        }
+      }
+    } catch (error) {
+      console.error("[Scheduled] Failed to rebuild clusters:", error);
+    }
+  }, [settings.openaiApiKey, currentSection, fetchClusters]);
+
+  const scheduledProfileAnalysis = useCallback(async () => {
+    if (!settings.openaiApiKey) return;
+    try {
+      await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ openaiApiKey: settings.openaiApiKey }),
+      });
+      console.log("[Scheduled] Profile analysis complete");
+    } catch (error) {
+      console.error("[Scheduled] Failed to analyze profile:", error);
+    }
+  }, [settings.openaiApiKey]);
+
+  // Initialize auto-scheduler
+  useAutoScheduler({
+    onEmbeddingsNeeded: scheduledEmbeddings,
+    onStoryRebuildNeeded: scheduledStoryRebuild,
+    onProfileAnalysisNeeded: scheduledProfileAnalysis,
+  });
 
   // Load clusters when switching to stories section
   useEffect(() => {
