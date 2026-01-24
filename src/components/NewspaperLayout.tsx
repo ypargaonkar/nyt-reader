@@ -75,7 +75,7 @@ function ArticleImage({
             className
           )}
         >
-          <NYTLogo size="lg" className="text-gray-400 dark:text-gray-600 mb-2" />
+          <NYTLogo size="lg" className="mb-2 opacity-50" />
           <span className={cn("text-xs font-semibold uppercase tracking-wider", sectionColor.text)}>
             {section}
           </span>
@@ -118,7 +118,7 @@ function HeroImage({
     return (
       <div className="absolute inset-0">
         <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-          <NYTLogo size="xl" className="text-gray-700" />
+          <NYTLogo size="xl" className="opacity-30" variant="light" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
         <div className={cn("absolute inset-0 bg-gradient-to-br opacity-30", sectionColor.bg)} />

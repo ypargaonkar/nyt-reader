@@ -5,50 +5,58 @@ import { cn } from "@/lib/utils";
 interface NYTLogoProps {
   className?: string;
   size?: "sm" | "md" | "lg" | "xl";
+  variant?: "light" | "dark";
 }
 
-export function NYTLogo({ className, size = "md" }: NYTLogoProps) {
+// NYT official logo URLs
+const LOGO_URLS = {
+  dark: "https://static01.nyt.com/newsgraphics/2015/12/23/daily-briefing/7a85af6ca4be8a012f2b3ab0f3bde2e9dd6ae05e/nyt-logo.png",
+  light: "https://static01.nyt.com/images/misc/NYT_logo_rss_250x40.png",
+};
+
+export function NYTLogo({ className, size = "md", variant = "dark" }: NYTLogoProps) {
   const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
-    xl: "w-24 h-24",
+    sm: "h-6",
+    md: "h-8",
+    lg: "h-12",
+    xl: "h-16",
   };
 
   return (
-    <svg
-      viewBox="0 0 100 100"
-      className={cn(sizeClasses[size], className)}
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* NYT Gothic "T" Logo */}
-      <path
-        d="M50 5C25.2 5 5 25.2 5 50s20.2 45 45 45 45-20.2 45-45S74.8 5 50 5zm0 6c21.5 0 39 17.5 39 39s-17.5 39-39 39-39-17.5-39-39 17.5-39 39-39z"
-        fillOpacity="0.1"
-      />
-      {/* Stylized T */}
-      <text
-        x="50"
-        y="68"
-        textAnchor="middle"
-        fontSize="55"
-        fontFamily="'Times New Roman', Georgia, serif"
-        fontWeight="bold"
-        fontStyle="italic"
-      >
-        T
-      </text>
-    </svg>
+    <img
+      src={LOGO_URLS[variant]}
+      alt="The New York Times"
+      className={cn(
+        sizeClasses[size],
+        "w-auto object-contain",
+        variant === "dark" && "invert dark:invert-0",
+        variant === "light" && "dark:invert",
+        className
+      )}
+    />
   );
 }
 
-// Full "The New York Times" text logo for larger spaces
-export function NYTTextLogo({ className }: { className?: string }) {
+// Compact stacked version for square spaces
+export function NYTLogoStacked({ className, size = "md" }: Omit<NYTLogoProps, "variant">) {
+  const sizeClasses = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
+    xl: "text-lg",
+  };
+
   return (
-    <div className={cn("font-serif italic font-bold tracking-tight", className)}>
-      <span className="text-[0.6em] font-normal not-italic">The</span>{" "}
-      <span>New York Times</span>
+    <div
+      className={cn(
+        "font-serif font-bold leading-tight text-center",
+        sizeClasses[size],
+        className
+      )}
+    >
+      <div className="text-[0.7em] font-normal tracking-wide">The</div>
+      <div className="tracking-tight">New York</div>
+      <div className="tracking-tight">Times</div>
     </div>
   );
 }

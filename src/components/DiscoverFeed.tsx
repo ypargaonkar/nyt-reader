@@ -162,7 +162,7 @@ export function DiscoverFeed({
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 dark:from-gray-800 dark:to-gray-900">
-                  <NYTLogo size="xl" className="text-amber-400 dark:text-amber-600 mb-2" />
+                  <NYTLogo size="xl" className="mb-2 opacity-60" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                     {currentArticle.section}
                   </span>
