@@ -268,6 +268,24 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "nyt-reader-storage",
+      version: 2,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Partial<AppState>;
+        if (version < 2) {
+          // Migrate to v2: set 6h as default quickFilter
+          return {
+            ...state,
+            globalFilters: {
+              ...state.globalFilters,
+              sections: state.globalFilters?.sections ?? [],
+              readingTime: state.globalFilters?.readingTime ?? "any",
+              dateRange: state.globalFilters?.dateRange ?? "any",
+              quickFilter: "6h",
+            },
+          };
+        }
+        return state;
+      },
       partialize: (state) => ({
         settings: state.settings,
         currentSection: state.currentSection,
