@@ -13,8 +13,8 @@ import {
   TrendingUp,
   Zap,
   ExternalLink,
-  Newspaper,
 } from "lucide-react";
+import { NYTLogo } from "@/components/NYTLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SwipeableCard } from "@/components/SwipeableCard";
@@ -75,7 +75,7 @@ function ArticleImage({
             className
           )}
         >
-          <Newspaper className="w-12 h-12 text-gray-400 dark:text-gray-600 mb-2" />
+          <NYTLogo size="lg" className="text-gray-400 dark:text-gray-600 mb-2" />
           <span className={cn("text-xs font-semibold uppercase tracking-wider", sectionColor.text)}>
             {section}
           </span>
@@ -118,7 +118,7 @@ function HeroImage({
     return (
       <div className="absolute inset-0">
         <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-          <Newspaper className="w-24 h-24 text-gray-700" />
+          <NYTLogo size="xl" className="text-gray-700" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
         <div className={cn("absolute inset-0 bg-gradient-to-br opacity-30", sectionColor.bg)} />

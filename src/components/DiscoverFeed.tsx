@@ -9,8 +9,8 @@ import {
   ExternalLink,
   Compass,
   Sparkles,
-  Newspaper,
 } from "lucide-react";
+import { NYTLogo } from "@/components/NYTLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Article } from "@/lib/types";
@@ -162,7 +162,7 @@ export function DiscoverFeed({
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 dark:from-gray-800 dark:to-gray-900">
-                  <Newspaper className="w-16 h-16 text-amber-400 dark:text-amber-600 mb-2" />
+                  <NYTLogo size="xl" className="text-amber-400 dark:text-amber-600 mb-2" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
                     {currentArticle.section}
                   </span>
