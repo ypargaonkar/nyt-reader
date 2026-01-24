@@ -34,6 +34,7 @@ interface AppState {
   loading: boolean;
   error: string | null;
   lastRefresh: string | null;
+  lastClusterRefresh: string | null;
 
   // User data
   readArticleUris: Set<string>;
@@ -58,6 +59,7 @@ interface AppState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setLastRefresh: (time: string) => void;
+  setLastClusterRefresh: (time: string) => void;
 
   // Cache actions
   getMasterCache: () => MasterCache | null;
@@ -102,6 +104,7 @@ export const useAppStore = create<AppState>()(
       loading: false,
       error: null,
       lastRefresh: null,
+      lastClusterRefresh: null,
 
       readArticleUris: new Set(),
       likedArticleUris: new Set(),
@@ -151,6 +154,8 @@ export const useAppStore = create<AppState>()(
       setError: (error) => set({ error }),
 
       setLastRefresh: (time) => set({ lastRefresh: time }),
+
+      setLastClusterRefresh: (time) => set({ lastClusterRefresh: time }),
 
       // Cache actions
       getMasterCache: () => {

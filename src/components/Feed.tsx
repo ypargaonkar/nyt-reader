@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
-import { AlertCircle, Newspaper, Settings, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List, History, Heart, BookOpen } from "lucide-react";
+import { AlertCircle, Newspaper, Settings, Bookmark, Layers, RefreshCw, CheckSquare, Square, Trash2, BookmarkPlus, Check, X, Search, LayoutGrid, List, History, Heart, BookOpen, Clock } from "lucide-react";
 import { ArticleCard } from "./ArticleCard";
 import { FeedSkeleton } from "./ArticleSkeleton";
 import { MagazineStoryCard } from "./MagazineStoryCard";
@@ -39,6 +39,9 @@ export function Feed({ onOpenSettings }: FeedProps) {
     setLoading,
     setError,
     setLastRefresh,
+    lastRefresh,
+    setLastClusterRefresh,
+    lastClusterRefresh,
     markAsRead,
     markAsLiked,
     saveArticle,
@@ -289,11 +292,14 @@ export function Feed({ onOpenSettings }: FeedProps) {
       if (res.ok) {
         const data = await res.json();
         setStoryClusters(data.clusters || []);
+        if (data.clusters?.length > 0) {
+          setLastClusterRefresh(new Date().toISOString());
+        }
       }
     } catch (error) {
       console.error("Failed to fetch clusters:", error);
     }
-  }, []);
+  }, [setLastClusterRefresh]);
 
   // Check embeddings status
   const checkEmbeddingsStatus = useCallback(async () => {
@@ -1088,22 +1094,34 @@ export function Feed({ onOpenSettings }: FeedProps) {
         />
 
         {/* Status bar */}
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 py-2 px-1">
-          <span>
-            {filteredClusters.length} story clusters
-            {(filters.searchQuery || filters.quickFilter) && ` (filtered from ${storyClusters.length})`}
-            {" "}from {filteredClusters.reduce((sum, c) => sum + c.articles.length, 0)} articles
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={generateClusters}
-            disabled={clustersLoading}
-            className="gap-1.5"
-          >
-            <RefreshCw className={`w-3 h-3 ${clustersLoading ? "animate-spin" : ""}`} />
-            Rebuild
-          </Button>
+        <div className="flex flex-col gap-2 text-sm text-gray-500 dark:text-gray-400 py-2 px-1">
+          <div className="flex items-center justify-between">
+            <span>
+              {filteredClusters.length} story clusters
+              {(filters.searchQuery || filters.quickFilter) && ` (filtered from ${storyClusters.length})`}
+              {" "}from {filteredClusters.reduce((sum, c) => sum + c.articles.length, 0)} articles
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={generateClusters}
+              disabled={clustersLoading}
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3 h-3 ${clustersLoading ? "animate-spin" : ""}`} />
+              Rebuild
+            </Button>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              Articles: {lastRefresh ? new Date(lastRefresh).toLocaleTimeString() : "Not yet"}
+            </span>
+            <span className="flex items-center gap-1">
+              <RefreshCw className="w-3 h-3" />
+              Clusters: {lastClusterRefresh ? new Date(lastClusterRefresh).toLocaleTimeString() : "Not yet"}
+            </span>
+          </div>
         </div>
 
         {/* No results */}
