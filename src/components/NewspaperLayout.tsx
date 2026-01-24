@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow, format, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import {
   Heart,
@@ -103,6 +103,12 @@ function ArticleImage({
   const [allFailed, setAllFailed] = useState(false);
   const sectionColor = getSectionColor(section);
 
+  // Reset state when src changes (new article)
+  useEffect(() => {
+    setSizeIndex(0);
+    setAllFailed(false);
+  }, [src]);
+
   // Get current image URL with cascaded size
   const currentSize = IMAGE_SIZES[sizeIndex];
   const imageUrl = src ? getImageUrlWithSize(src, currentSize) : null;
@@ -166,6 +172,12 @@ function HeroImage({
 }) {
   const [sizeIndex, setSizeIndex] = useState(0);
   const [allFailed, setAllFailed] = useState(false);
+
+  // Reset state when src changes (new article)
+  useEffect(() => {
+    setSizeIndex(0);
+    setAllFailed(false);
+  }, [src]);
 
   // Get current image URL with cascaded size
   const currentSize = IMAGE_SIZES[sizeIndex];
