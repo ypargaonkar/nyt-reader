@@ -92,7 +92,7 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4-turbo-preview",
     messages: [
       {
         role: "system",
@@ -136,7 +136,7 @@ export async function generateRecommendationQuery(
     .map(([k]) => k);
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4-turbo-preview",
     messages: [
       {
         role: "system",

@@ -55,40 +55,19 @@ export async function generateEmbeddings(
   return embeddings;
 }
 
-// Calculate centroid (average) of multiple embeddings
-function calculateCentroid(embeddings: number[][]): number[] {
-  if (embeddings.length === 0) return [];
-  const dim = embeddings[0].length;
-  const centroid = new Array(dim).fill(0);
-
-  for (const emb of embeddings) {
-    for (let i = 0; i < dim; i++) {
-      centroid[i] += emb[i];
-    }
-  }
-
-  for (let i = 0; i < dim; i++) {
-    centroid[i] /= embeddings.length;
-  }
-
-  return centroid;
-}
-
-// Cluster articles based on embedding similarity with improved algorithm
+// Cluster articles based on embedding similarity (original algorithm)
 export function clusterArticles(
   articles: Article[],
   embeddings: Map<string, number[]>,
-  similarityThreshold: number = 0.58 // Lowered for better grouping
+  similarityThreshold: number = 0.68
 ): StoryCluster[] {
+  const clusters: StoryCluster[] = [];
   const assigned = new Set<string>();
 
-  // Sort articles by date (newest first)
+  // Sort articles by date (newest first) for better cluster naming
   const sortedArticles = [...articles].sort(
     (a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime()
   );
-
-  // Phase 1: Initial clustering with centroid-based matching
-  const rawClusters: { articles: Article[]; embeddings: number[][] }[] = [];
 
   for (const article of sortedArticles) {
     if (assigned.has(article.uri)) continue;
@@ -96,108 +75,62 @@ export function clusterArticles(
     const embedding = embeddings.get(article.uri);
     if (!embedding) continue;
 
-    // Try to find an existing cluster this article fits into
-    let bestClusterIdx = -1;
-    let bestSimilarity = 0;
+    // Find similar articles
+    const clusterArticles: Article[] = [article];
+    assigned.add(article.uri);
 
-    for (let i = 0; i < rawClusters.length; i++) {
-      const cluster = rawClusters[i];
-      // Compare to cluster centroid
-      const centroid = calculateCentroid(cluster.embeddings);
-      const similarity = cosineSimilarity(embedding, centroid);
+    for (const other of sortedArticles) {
+      if (assigned.has(other.uri)) continue;
 
-      // Also check similarity to any article in cluster (helps with diverse clusters)
-      const maxArticleSim = Math.max(
-        ...cluster.embeddings.map((e) => cosineSimilarity(embedding, e))
+      const otherEmbedding = embeddings.get(other.uri);
+      if (!otherEmbedding) continue;
+
+      const similarity = cosineSimilarity(embedding, otherEmbedding);
+      if (similarity >= similarityThreshold) {
+        clusterArticles.push(other);
+        assigned.add(other.uri);
+      }
+    }
+
+    // Only create clusters with 2+ articles
+    if (clusterArticles.length >= 2) {
+      // Sort cluster articles by date
+      clusterArticles.sort(
+        (a, b) => new Date(a.publishedDate).getTime() - new Date(b.publishedDate).getTime()
       );
 
-      const effectiveSimilarity = Math.max(similarity, maxArticleSim * 0.95);
-
-      if (effectiveSimilarity >= similarityThreshold && effectiveSimilarity > bestSimilarity) {
-        bestSimilarity = effectiveSimilarity;
-        bestClusterIdx = i;
-      }
-    }
-
-    if (bestClusterIdx >= 0) {
-      // Add to existing cluster
-      rawClusters[bestClusterIdx].articles.push(article);
-      rawClusters[bestClusterIdx].embeddings.push(embedding);
-      assigned.add(article.uri);
-    } else {
-      // Start a new cluster
-      rawClusters.push({
-        articles: [article],
-        embeddings: [embedding],
+      // Extract common keywords
+      const keywordCounts = new Map<string, number>();
+      clusterArticles.forEach((a) => {
+        a.keywords.forEach((kw) => {
+          keywordCounts.set(kw, (keywordCounts.get(kw) || 0) + 1);
+        });
       });
-      assigned.add(article.uri);
-    }
-  }
 
-  // Phase 2: Merge similar clusters
-  const mergeThreshold = 0.52; // Lower threshold for merging clusters
-  let merged = true;
+      // Get keywords that appear in multiple articles
+      const commonKeywords = Array.from(keywordCounts.entries())
+        .filter(([, count]) => count >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([kw]) => kw);
 
-  while (merged) {
-    merged = false;
-    for (let i = 0; i < rawClusters.length; i++) {
-      for (let j = i + 1; j < rawClusters.length; j++) {
-        const centroidI = calculateCentroid(rawClusters[i].embeddings);
-        const centroidJ = calculateCentroid(rawClusters[j].embeddings);
-        const similarity = cosineSimilarity(centroidI, centroidJ);
+      // Generate cluster title from most common keywords or first article
+      const title = commonKeywords.length > 0
+        ? commonKeywords.slice(0, 3).join(", ")
+        : clusterArticles[0].title.split(":")[0].trim();
 
-        if (similarity >= mergeThreshold) {
-          // Merge cluster j into cluster i
-          rawClusters[i].articles.push(...rawClusters[j].articles);
-          rawClusters[i].embeddings.push(...rawClusters[j].embeddings);
-          rawClusters.splice(j, 1);
-          merged = true;
-          break;
-        }
-      }
-      if (merged) break;
-    }
-  }
-
-  // Phase 3: Convert to StoryCluster format (only clusters with 2+ articles)
-  const clusters: StoryCluster[] = [];
-
-  for (const raw of rawClusters) {
-    if (raw.articles.length < 2) continue;
-
-    const clusterArticles = [...raw.articles].sort(
-      (a, b) => new Date(a.publishedDate).getTime() - new Date(b.publishedDate).getTime()
-    );
-
-    // Extract common keywords
-    const keywordCounts = new Map<string, number>();
-    clusterArticles.forEach((a) => {
-      a.keywords.forEach((kw) => {
-        keywordCounts.set(kw, (keywordCounts.get(kw) || 0) + 1);
+      clusters.push({
+        id: `cluster-${Date.now()}-${clusters.length}`,
+        title,
+        articles: clusterArticles,
+        keywords: commonKeywords,
+        timespan: {
+          start: clusterArticles[0].publishedDate,
+          end: clusterArticles[clusterArticles.length - 1].publishedDate,
+        },
+        updatedAt: new Date().toISOString(),
       });
-    });
-
-    const commonKeywords = Array.from(keywordCounts.entries())
-      .filter(([, count]) => count >= 2)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([kw]) => kw);
-
-    const title = commonKeywords.length > 0
-      ? commonKeywords.slice(0, 3).join(", ")
-      : clusterArticles[0].title.split(":")[0].trim();
-
-    clusters.push({
-      id: `cluster-${Date.now()}-${clusters.length}`,
-      title,
-      articles: clusterArticles,
-      keywords: commonKeywords,
-      timespan: {
-        start: clusterArticles[0].publishedDate,
-        end: clusterArticles[clusterArticles.length - 1].publishedDate,
-      },
-      updatedAt: new Date().toISOString(),
-    });
+    }
   }
 
   // Sort clusters by number of articles (largest first)
@@ -219,7 +152,7 @@ export async function generateClusterTitleAndSummary(
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

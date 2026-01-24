@@ -26,7 +26,7 @@ export interface FilterOptions {
   searchQuery: string;
   sections: string[];
   readingTime: "any" | "quick" | "medium" | "long";
-  dateRange: "any" | "today" | "week" | "month";
+  dateRange: "any" | "6h" | "today" | "week" | "month";
   quickFilter?: "new" | "today" | null;
 }
 
@@ -45,6 +45,7 @@ const readingTimeLabels = {
 
 const dateRangeLabels = {
   any: "Any time",
+  "6h": "Last 6 hours",
   today: "Today",
   week: "This week",
   month: "This month",
@@ -397,7 +398,10 @@ export function applyFilters<T extends { title: string; abstract: string; sectio
     // Date range
     const publishedDate = new Date(article.publishedDate);
     const now = new Date();
-    if (filters.dateRange === "today") {
+    if (filters.dateRange === "6h") {
+      const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      if (publishedDate < sixHoursAgo) return false;
+    } else if (filters.dateRange === "today") {
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       if (publishedDate < today) return false;
     } else if (filters.dateRange === "week") {

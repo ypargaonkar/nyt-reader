@@ -6,6 +6,7 @@ import {
   Heart,
   Bookmark,
   X,
+  Check,
   Clock,
   UserPlus,
   UserCheck,
@@ -237,6 +238,7 @@ function parseByline(byline: string): string[] {
 interface NewspaperLayoutProps {
   layout: LayoutType;
   onRead: (uri: string) => void;
+  onDismiss: (uri: string) => void;
   onLike: (uri: string) => void;
   onSave: (uri: string) => void;
   onOpen: (uri: string) => void;
@@ -347,6 +349,7 @@ function ActionButtons({
   onLike,
   onSave,
   onRead,
+  onDismiss,
   size = "md",
 }: {
   article: Article;
@@ -355,6 +358,7 @@ function ActionButtons({
   onLike: () => void;
   onSave: () => void;
   onRead: () => void;
+  onDismiss: () => void;
   size?: "sm" | "md" | "lg";
 }) {
   const [liked, setLiked] = useState(isLiked);
@@ -387,6 +391,7 @@ function ActionButtons({
             ? "bg-red-100 dark:bg-red-900/50 text-red-500"
             : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-red-500"
         )}
+        title="Like"
       >
         <Heart className={cn(iconSize, liked && "fill-current")} />
       </button>
@@ -402,11 +407,23 @@ function ActionButtons({
             ? "bg-blue-100 dark:bg-blue-900/50 text-blue-500"
             : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-blue-500"
         )}
+        title="Save for later"
       >
         <Bookmark className={cn(iconSize, saved && "fill-current")} />
       </button>
       <button
         onClick={onRead}
+        className={cn(
+          buttonSize,
+          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
+          "hover:bg-green-100 dark:hover:bg-green-900/50 text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+        )}
+        title="Mark as read"
+      >
+        <Check className={iconSize} />
+      </button>
+      <button
+        onClick={onDismiss}
         className={cn(
           buttonSize,
           "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
@@ -424,6 +441,7 @@ function ActionButtons({
 function HeroArticle({
   article,
   onRead,
+  onDismiss,
   onLike,
   onSave,
   onOpen,
@@ -435,6 +453,7 @@ function HeroArticle({
 }: {
   article: Article & { relevanceScore?: number };
   onRead: (uri: string) => void;
+  onDismiss: (uri: string) => void;
   onLike: (uri: string) => void;
   onSave: (uri: string) => void;
   onOpen: (uri: string) => void;
@@ -518,6 +537,7 @@ function HeroArticle({
                 onLike={() => onLike(article.uri)}
                 onSave={() => onSave(article.uri)}
                 onRead={() => onRead(article.uri)}
+                onDismiss={() => onDismiss(article.uri)}
                 size="lg"
               />
               <Button
@@ -540,6 +560,7 @@ function HeroArticle({
 function FeaturedCard({
   article,
   onRead,
+  onDismiss,
   onLike,
   onSave,
   onOpen,
@@ -551,6 +572,7 @@ function FeaturedCard({
 }: {
   article: Article & { relevanceScore?: number };
   onRead: (uri: string) => void;
+  onDismiss: (uri: string) => void;
   onLike: (uri: string) => void;
   onSave: (uri: string) => void;
   onOpen: (uri: string) => void;
@@ -643,6 +665,7 @@ function FeaturedCard({
             onLike={() => onLike(article.uri)}
             onSave={() => onSave(article.uri)}
             onRead={() => onRead(article.uri)}
+            onDismiss={() => onDismiss(article.uri)}
             size="sm"
           />
         </div>
@@ -655,6 +678,7 @@ function FeaturedCard({
 function MiniCard({
   article,
   onRead,
+  onDismiss,
   onLike,
   onSave,
   onOpen,
@@ -666,6 +690,7 @@ function MiniCard({
 }: {
   article: Article & { relevanceScore?: number };
   onRead: (uri: string) => void;
+  onDismiss: (uri: string) => void;
   onLike: (uri: string) => void;
   onSave: (uri: string) => void;
   onOpen: (uri: string) => void;
@@ -747,6 +772,7 @@ function MiniCard({
             onLike={() => onLike(article.uri)}
             onSave={() => onSave(article.uri)}
             onRead={() => onRead(article.uri)}
+            onDismiss={() => onDismiss(article.uri)}
             size="sm"
           />
         </div>
@@ -759,6 +785,7 @@ function MiniCard({
 function ScrollCard({
   article,
   onRead,
+  onDismiss,
   onLike,
   onSave,
   onOpen,
@@ -770,6 +797,7 @@ function ScrollCard({
 }: {
   article: Article & { relevanceScore?: number };
   onRead: (uri: string) => void;
+  onDismiss: (uri: string) => void;
   onLike: (uri: string) => void;
   onSave: (uri: string) => void;
   onOpen: (uri: string) => void;
@@ -846,6 +874,7 @@ function ScrollCard({
             onLike={() => onLike(article.uri)}
             onSave={() => onSave(article.uri)}
             onRead={() => onRead(article.uri)}
+            onDismiss={() => onDismiss(article.uri)}
             size="sm"
           />
         </div>
@@ -858,6 +887,7 @@ function ScrollCard({
 export function NewspaperLayout({
   layout,
   onRead,
+  onDismiss,
   onLike,
   onSave,
   onOpen,
@@ -890,6 +920,7 @@ export function NewspaperLayout({
           <HeroArticle
             article={layout.hero}
             onRead={onRead}
+            onDismiss={onDismiss}
             onLike={onLike}
             onSave={onSave}
             onOpen={onOpen}
@@ -917,13 +948,14 @@ export function NewspaperLayout({
               <SwipeableCard
                 key={article.uri}
                 onSwipeRight={() => onLike(article.uri)}
-                onSwipeLeft={() => onRead(article.uri)}
+                onSwipeLeft={() => onDismiss(article.uri)}
                 rightLabel="Like"
                 leftLabel="Dismiss"
               >
                 <FeaturedCard
                   article={article}
                   onRead={onRead}
+                  onDismiss={onDismiss}
                   onLike={onLike}
                   onSave={onSave}
                   onOpen={onOpen}
@@ -954,13 +986,14 @@ export function NewspaperLayout({
               <SwipeableCard
                 key={article.uri}
                 onSwipeRight={() => onLike(article.uri)}
-                onSwipeLeft={() => onRead(article.uri)}
+                onSwipeLeft={() => onDismiss(article.uri)}
                 rightLabel="Like"
                 leftLabel="Dismiss"
               >
                 <MiniCard
                   article={article}
                   onRead={onRead}
+                  onDismiss={onDismiss}
                   onLike={onLike}
                   onSave={onSave}
                   onOpen={onOpen}
@@ -993,6 +1026,7 @@ export function NewspaperLayout({
                   <ScrollCard
                     article={article}
                     onRead={onRead}
+                    onDismiss={onDismiss}
                     onLike={onLike}
                     onSave={onSave}
                     onOpen={onOpen}

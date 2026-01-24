@@ -103,9 +103,8 @@ export async function POST(request: NextRequest) {
     // Filter to only articles with embeddings
     const articlesWithEmbeddings = articles.filter((a) => embeddings.has(a.uri));
 
-    // Cluster articles (lower threshold = groups more related articles together)
-    // Using 0.58 for better grouping of related stories (e.g., winter storm, Greenland)
-    const clusters = clusterArticles(articlesWithEmbeddings, embeddings, 0.58);
+    // Cluster articles (higher threshold = stricter grouping, fewer false positives)
+    const clusters = clusterArticles(articlesWithEmbeddings, embeddings, 0.68);
 
     // Clear old clusters
     if (useCloud) {

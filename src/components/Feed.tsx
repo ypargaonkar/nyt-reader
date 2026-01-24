@@ -403,7 +403,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     }
   }, [currentSection, initialized, masterCache, applySectionFilter]);
 
-  // Handle marking as read
+  // Handle marking as read (for articles user actually read)
   const handleRead = async (uri: string) => {
     markAsRead(uri);
 
@@ -415,6 +415,21 @@ export function Feed({ onOpenSettings }: FeedProps) {
       });
     } catch (error) {
       console.error("Failed to record read:", error);
+    }
+  };
+
+  // Handle dismiss (remove from feed forever, not tracked in history)
+  const handleDismiss = async (uri: string) => {
+    markAsRead(uri); // Still removes from UI immediately
+
+    try {
+      await fetch("/api/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ articleUri: uri, action: "dismissed" }),
+      });
+    } catch (error) {
+      console.error("Failed to record dismiss:", error);
     }
   };
 
@@ -844,7 +859,10 @@ export function Feed({ onOpenSettings }: FeedProps) {
         const now = new Date();
         const hasMatchingArticle = cluster.articles.some((a) => {
           const published = new Date(a.publishedDate);
-          if (filters.dateRange === "today") {
+          if (filters.dateRange === "6h") {
+            const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+            return published >= sixHoursAgo;
+          } else if (filters.dateRange === "today") {
             const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             return published >= today;
           } else if (filters.dateRange === "week") {
@@ -1137,6 +1155,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
         <NewspaperLayout
           layout={categorizeForNewspaper(displayedArticles as any)}
           onRead={handleRead}
+          onDismiss={handleDismiss}
           onLike={handleLike}
           onSave={handleSave}
           onOpen={handleOpen}
