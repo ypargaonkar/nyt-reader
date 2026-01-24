@@ -123,7 +123,7 @@ export function HamburgerMenu({
         </div>
 
         {/* Sections - scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="p-2">
             <p className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Browse Sections
