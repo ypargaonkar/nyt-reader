@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { formatDistanceToNow, format, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import {
@@ -21,6 +22,7 @@ import { SwipeableCard } from "@/components/SwipeableCard";
 import type { Article } from "@/lib/types";
 import type { NewspaperLayout as LayoutType } from "@/lib/smart-ranker";
 import { cn, openArticleLink } from "@/lib/utils";
+
 // Section color mapping for visual coding
 const sectionColors: Record<string, { bg: string; text: string; accent: string }> = {
   "Politics": { bg: "from-red-500/20 to-red-600/10", text: "text-red-600 dark:text-red-400", accent: "bg-red-500" },
@@ -35,9 +37,11 @@ const sectionColors: Record<string, { bg: string; text: string; accent: string }
   "Opinion": { bg: "from-slate-500/20 to-slate-600/10", text: "text-slate-600 dark:text-slate-400", accent: "bg-slate-500" },
   "default": { bg: "from-gray-500/20 to-gray-600/10", text: "text-gray-600 dark:text-gray-400", accent: "bg-gray-500" },
 };
+
 const getSectionColor = (section: string) => {
   return sectionColors[section] || sectionColors["default"];
 };
+
 // NYT image size suffixes from largest to smallest for fallback cascade
 const IMAGE_SIZES = [
   "superJumbo",
@@ -50,6 +54,7 @@ const IMAGE_SIZES = [
   "thumbLarge",
   "thumbStandard",
 ] as const;
+
 // Known size suffixes that appear in URLs
 const KNOWN_SUFFIXES = [
   "thumbStandard",
@@ -64,6 +69,7 @@ const KNOWN_SUFFIXES = [
   "videoSixteenByNineJumbo",
   "facebookJumbo",
 ];
+
 // Get image URL with specific size
 function getImageUrlWithSize(url: string, targetSize: string): string {
   for (const suffix of KNOWN_SUFFIXES) {
@@ -73,6 +79,7 @@ function getImageUrlWithSize(url: string, targetSize: string): string {
   }
   return url;
 }
+
 // Image with fallback placeholder and size cascade
 function ArticleImage({
   src,
@@ -96,14 +103,17 @@ function ArticleImage({
   const [sizeIndex, setSizeIndex] = useState(0);
   const [allFailed, setAllFailed] = useState(false);
   const sectionColor = getSectionColor(section);
+
   // Reset state when src changes (new article)
   useEffect(() => {
     setSizeIndex(0);
     setAllFailed(false);
   }, [src]);
+
   // Get current image URL with cascaded size
   const currentSize = IMAGE_SIZES[sizeIndex];
   const imageUrl = src ? getImageUrlWithSize(src, currentSize) : null;
+
   // Handle image error - try next size
   const handleError = () => {
     if (sizeIndex < IMAGE_SIZES.length - 1) {
@@ -112,6 +122,7 @@ function ArticleImage({
       setAllFailed(true);
     }
   };
+
   // Show fallback if no src or all sizes failed
   if (!src || allFailed) {
     return (
@@ -133,6 +144,7 @@ function ArticleImage({
       </div>
     );
   }
+
   return (
     <div className={cn("relative overflow-hidden", containerClassName)}>
       <img
@@ -146,6 +158,7 @@ function ArticleImage({
     </div>
   );
 }
+
 // Hero image with fallback for the main hero article and size cascade
 function HeroImage({
   src,
@@ -160,14 +173,17 @@ function HeroImage({
 }) {
   const [sizeIndex, setSizeIndex] = useState(0);
   const [allFailed, setAllFailed] = useState(false);
+
   // Reset state when src changes (new article)
   useEffect(() => {
     setSizeIndex(0);
     setAllFailed(false);
   }, [src]);
+
   // Get current image URL with cascaded size
   const currentSize = IMAGE_SIZES[sizeIndex];
   const imageUrl = src ? getImageUrlWithSize(src, currentSize) : null;
+
   // Handle image error - try next size
   const handleError = () => {
     if (sizeIndex < IMAGE_SIZES.length - 1) {
@@ -176,6 +192,7 @@ function HeroImage({
       setAllFailed(true);
     }
   };
+
   if (!src || allFailed) {
     return (
       <div className="absolute inset-0">
@@ -187,6 +204,7 @@ function HeroImage({
       </div>
     );
   }
+
   return (
     <div className="absolute inset-0">
       <img
@@ -205,6 +223,7 @@ function HeroImage({
     </div>
   );
 }
+
 // Parse byline to extract journalist names
 function parseByline(byline: string): string[] {
   if (!byline) return [];
@@ -215,6 +234,7 @@ function parseByline(byline: string): string[] {
     .map((name) => name.trim())
     .filter((name) => name.length > 2 && !name.toLowerCase().includes("the new york times"));
 }
+
 interface NewspaperLayoutProps {
   layout: LayoutType;
   onRead: (uri: string) => void;
@@ -228,10 +248,12 @@ interface NewspaperLayoutProps {
   followedJournalists?: Set<string>;
   showRelevanceScore?: boolean;
 }
+
 // Reusable date badge component with animation
 function DateBadge({ publishedDate }: { publishedDate: string }) {
   const date = new Date(publishedDate);
   const minutesAgo = differenceInMinutes(new Date(), date);
+
   if (minutesAgo < 60) {
     return (
       <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold animate-pulse shadow-lg shadow-red-500/25">
@@ -250,18 +272,21 @@ function DateBadge({ publishedDate }: { publishedDate: string }) {
   }
   return null;
 }
+
 // Time display with smart formatting
 function TimeDisplay({ publishedDate, className }: { publishedDate: string; className?: string }) {
   const date = new Date(publishedDate);
   const minutesAgo = differenceInMinutes(new Date(), date);
   const hoursAgo = Math.floor(minutesAgo / 60);
   const daysAgo = Math.floor(hoursAgo / 24);
+
   const getTimeStyle = () => {
     if (minutesAgo < 60) return "text-red-500 font-semibold";
     if (isToday(date)) return "text-green-600 dark:text-green-400";
     if (isYesterday(date)) return "text-blue-500";
     return "text-gray-400";
   };
+
   // Shorter time format
   const getShortTime = () => {
     if (minutesAgo < 60) return `${minutesAgo}m ago`;
@@ -270,6 +295,7 @@ function TimeDisplay({ publishedDate, className }: { publishedDate: string; clas
     if (daysAgo < 7) return `${daysAgo}d ago`;
     return format(date, "MMM d");
   };
+
   return (
     <span className={cn("flex items-center gap-1 text-xs whitespace-nowrap", getTimeStyle(), className)}>
       <Clock className="w-3 h-3 flex-shrink-0" />
@@ -277,6 +303,7 @@ function TimeDisplay({ publishedDate, className }: { publishedDate: string; clas
     </span>
   );
 }
+
 // Journalist chip with follow functionality
 function JournalistChip({
   name,
@@ -313,6 +340,7 @@ function JournalistChip({
     </button>
   );
 }
+
 // Action buttons with beautiful hover states
 function ActionButtons({
   article,
@@ -320,6 +348,7 @@ function ActionButtons({
   isSaved,
   onLike,
   onSave,
+  onRead,
   onDismiss,
   size = "md",
 }: {
@@ -328,27 +357,32 @@ function ActionButtons({
   isSaved: boolean;
   onLike: () => void;
   onSave: () => void;
+  onRead: () => void;
   onDismiss: () => void;
   size?: "sm" | "md" | "lg";
 }) {
   const [liked, setLiked] = useState(isLiked);
   const [saved, setSaved] = useState(isSaved);
+
   // Sync local state when article changes
   useEffect(() => {
     setLiked(isLiked);
     setSaved(isSaved);
   }, [article.uri, isLiked, isSaved]);
+
   // Mobile-friendly touch targets (min 44px)
   const buttonSize = {
     sm: "p-2 md:p-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
     md: "p-2.5 md:p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
     lg: "p-3 md:p-2.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0",
   }[size];
+
   const iconSize = {
     sm: "w-4 h-4 md:w-3.5 md:h-3.5",
     md: "w-5 h-5 md:w-4 md:h-4",
     lg: "w-6 h-6 md:w-5 md:h-5",
   }[size];
+
   return (
     <div className="flex items-center gap-1 md:gap-1" onClick={(e) => e.stopPropagation()}>
       <button
@@ -384,6 +418,17 @@ function ActionButtons({
         <Bookmark className={cn(iconSize, saved && "fill-current")} />
       </button>
       <button
+        onClick={onRead}
+        className={cn(
+          buttonSize,
+          "rounded-full transition-all duration-200 hover:scale-110 active:scale-95 touch-manipulation flex items-center justify-center",
+          "hover:bg-green-100 dark:hover:bg-green-900/50 text-gray-400 hover:text-green-600 dark:hover:text-green-400"
+        )}
+        title="Mark as read"
+      >
+        <Check className={iconSize} />
+      </button>
+      <button
         onClick={onDismiss}
         className={cn(
           buttonSize,
@@ -397,6 +442,7 @@ function ActionButtons({
     </div>
   );
 }
+
 // Hero Article - Immersive full-width card
 function HeroArticle({
   article,
@@ -425,6 +471,7 @@ function HeroArticle({
 }) {
   const journalists = parseByline(article.byline);
   const sectionColor = getSectionColor(article.section);
+
   return (
     <article
       className="relative group cursor-pointer overflow-hidden rounded-2xl bg-gray-900 text-white shadow-2xl"
@@ -440,6 +487,7 @@ function HeroArticle({
         section={article.section}
         sectionColor={sectionColor}
       />
+
       {/* Content */}
       <div className="relative z-10 p-8 md:p-12 min-h-[450px] md:min-h-[550px] flex flex-col">
         {/* Top badges - inline, not absolute */}
@@ -457,8 +505,10 @@ function HeroArticle({
             </Badge>
           )}
         </div>
+
         {/* Spacer to push content to bottom */}
         <div className="flex-1" />
+
         {/* Title & Abstract */}
         <div className="max-w-4xl">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold leading-[1.1] mb-4 group-hover:text-blue-300 transition-colors duration-300">
@@ -467,6 +517,7 @@ function HeroArticle({
           <p className="text-lg md:text-xl text-gray-200/90 leading-relaxed mb-6 line-clamp-3 max-w-3xl">
             {article.abstract}
           </p>
+
           {/* Journalists */}
           {journalists.length > 0 && onFollowJournalist && (
             <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -482,9 +533,11 @@ function HeroArticle({
               ))}
             </div>
           )}
+
           {/* Bottom row */}
           <div className="flex items-center justify-between">
             <TimeDisplay publishedDate={article.publishedDate} className="text-gray-300 text-sm" />
+
             <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
               <ActionButtons
                 article={article}
@@ -492,6 +545,7 @@ function HeroArticle({
                 isSaved={isSaved}
                 onLike={() => onLike(article.uri)}
                 onSave={() => onSave(article.uri)}
+                onRead={() => onRead(article.uri)}
                 onDismiss={() => onDismiss(article.uri)}
                 size="lg"
               />
@@ -510,6 +564,7 @@ function HeroArticle({
     </article>
   );
 }
+
 // Featured Card - Visual card with image
 function FeaturedCard({
   article,
@@ -538,6 +593,7 @@ function FeaturedCard({
 }) {
   const journalists = parseByline(article.byline);
   const sectionColor = getSectionColor(article.section);
+
   return (
     <article
       className={cn(
@@ -574,21 +630,26 @@ function FeaturedCard({
               </Badge>
             )}
           </div>
+
           {/* Section indicator bar */}
           <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
         </ArticleImage>
       )}
+
       {/* Content */}
       <div className="p-5">
         <Badge variant="outline" className={cn("text-xs uppercase mb-3 font-semibold", sectionColor.text)}>
           {article.section}
         </Badge>
+
         <h2 className="text-lg font-serif font-bold leading-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
           {article.title}
         </h2>
+
         <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed mb-4 line-clamp-2">
           {article.abstract}
         </p>
+
         {/* Journalists */}
         {journalists.length > 0 && onFollowJournalist && (
           <div className="flex flex-wrap items-center gap-1.5 mb-4">
@@ -603,6 +664,7 @@ function FeaturedCard({
             ))}
           </div>
         )}
+
         <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
           <TimeDisplay publishedDate={article.publishedDate} />
           <ActionButtons
@@ -611,6 +673,7 @@ function FeaturedCard({
             isSaved={isSaved}
             onLike={() => onLike(article.uri)}
             onSave={() => onSave(article.uri)}
+            onRead={() => onRead(article.uri)}
             onDismiss={() => onDismiss(article.uri)}
             size="sm"
           />
@@ -619,6 +682,7 @@ function FeaturedCard({
     </article>
   );
 }
+
 // Mini Card - Clean vertical card
 function MiniCard({
   article,
@@ -647,6 +711,7 @@ function MiniCard({
 }) {
   const journalists = parseByline(article.byline);
   const sectionColor = getSectionColor(article.section);
+
   return (
     <article
       className={cn(
@@ -681,14 +746,17 @@ function MiniCard({
           <div className={cn("absolute bottom-0 left-0 right-0 h-1", sectionColor.accent)} />
         </ArticleImage>
       )}
+
       {/* Content */}
       <div className="p-4">
         <div className={cn("text-xs font-semibold uppercase mb-2", sectionColor.text)}>
           {article.section}
         </div>
+
         <h3 className="font-serif font-bold text-base leading-snug mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
           {article.title}
         </h3>
+
         {/* Byline with follow functionality */}
         {journalists.length > 0 && onFollowJournalist && (
           <div className="flex flex-wrap items-center gap-1 mb-3">
@@ -703,6 +771,7 @@ function MiniCard({
             ))}
           </div>
         )}
+
         <div className="flex items-center justify-between">
           <TimeDisplay publishedDate={article.publishedDate} />
           <ActionButtons
@@ -711,6 +780,7 @@ function MiniCard({
             isSaved={isSaved}
             onLike={() => onLike(article.uri)}
             onSave={() => onSave(article.uri)}
+            onRead={() => onRead(article.uri)}
             onDismiss={() => onDismiss(article.uri)}
             size="sm"
           />
@@ -719,6 +789,7 @@ function MiniCard({
     </article>
   );
 }
+
 // Horizontal scroll card for "More Stories"
 function ScrollCard({
   article,
@@ -747,6 +818,7 @@ function ScrollCard({
 }) {
   const sectionColor = getSectionColor(article.section);
   const journalists = parseByline(article.byline);
+
   return (
     <article
       className={cn(
@@ -780,6 +852,7 @@ function ScrollCard({
           </div>
         </ArticleImage>
       )}
+
       <div className="p-4">
         <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
           {article.section}
@@ -809,6 +882,7 @@ function ScrollCard({
             isSaved={isSaved}
             onLike={() => onLike(article.uri)}
             onSave={() => onSave(article.uri)}
+            onRead={() => onRead(article.uri)}
             onDismiss={() => onDismiss(article.uri)}
             size="sm"
           />
@@ -817,6 +891,7 @@ function ScrollCard({
     </article>
   );
 }
+
 // Main Newspaper Layout Component
 export function NewspaperLayout({
   layout,
@@ -832,6 +907,7 @@ export function NewspaperLayout({
   showRelevanceScore = false,
 }: NewspaperLayoutProps) {
   const hasContent = layout.hero || layout.featured.length > 0 || layout.standard.length > 0;
+
   if (!hasContent) {
     return (
       <div className="text-center py-16 text-gray-500">
@@ -839,10 +915,12 @@ export function NewspaperLayout({
       </div>
     );
   }
+
   // Combine standard and compact for better visual treatment
   const moreStories = [...layout.standard, ...layout.compact];
   const gridStories = moreStories.slice(0, 12);
   const scrollStories = moreStories.slice(12);
+
   return (
     <div className="space-y-10">
       {/* Hero Section */}
@@ -863,6 +941,7 @@ export function NewspaperLayout({
           />
         </section>
       )}
+
       {/* Featured Section */}
       {layout.featured.length > 0 && (
         <section>
@@ -900,6 +979,7 @@ export function NewspaperLayout({
           </div>
         </section>
       )}
+
       {/* More Stories Grid */}
       {gridStories.length > 0 && (
         <section>
@@ -937,6 +1017,7 @@ export function NewspaperLayout({
           </div>
         </section>
       )}
+
       {/* Horizontal Scroll Section for remaining stories */}
       {scrollStories.length > 0 && (
         <section>
