@@ -419,16 +419,32 @@ function TimelineArticle({
           )}
         </div>
 
-        {/* Title */}
-        <h3
-          className={cn(
-            "font-medium text-sm md:text-base leading-snug mb-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors",
-            isRead && "text-gray-500 dark:text-gray-400"
-          )}
-          onClick={() => openArticleLink(article.url)}
-        >
-          {article.title}
-        </h3>
+        {/* Title - show abstract if title is generic */}
+        {(() => {
+          const isGenericTitle =
+            article.title.toLowerCase().includes("here's the latest") ||
+            article.title.toLowerCase().includes("heres the latest") ||
+            article.title.toLowerCase() === "here's the latest." ||
+            article.title.toLowerCase().includes("what we know") ||
+            article.title.toLowerCase().includes("live updates");
+
+          const displayTitle = isGenericTitle && article.abstract
+            ? article.abstract
+            : article.title;
+
+          return (
+            <h3
+              className={cn(
+                "font-medium text-sm md:text-base leading-snug mb-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors",
+                isRead && "text-gray-500 dark:text-gray-400",
+                isGenericTitle && "line-clamp-3" // Allow more lines for abstract
+              )}
+              onClick={() => openArticleLink(article.url)}
+            >
+              {displayTitle}
+            </h3>
+          );
+        })()}
 
         {/* Byline with follow buttons */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">

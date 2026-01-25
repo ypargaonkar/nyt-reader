@@ -139,6 +139,19 @@ export function clusterArticles(
   return clusters;
 }
 
+// Check if a title is generic/unhelpful
+function isGenericTitle(title: string): boolean {
+  const lower = title.toLowerCase();
+  return (
+    lower.includes("here's the latest") ||
+    lower.includes("heres the latest") ||
+    lower.includes("what we know") ||
+    lower.includes("what to know") ||
+    lower === "live updates" ||
+    lower === "breaking news"
+  );
+}
+
 // Generate a title and summary for a cluster using AI
 export async function generateClusterTitleAndSummary(
   cluster: StoryCluster,
@@ -146,9 +159,21 @@ export async function generateClusterTitleAndSummary(
 ): Promise<{ title: string; summary: string }> {
   const openai = new OpenAI({ apiKey: openaiApiKey });
 
+  // Build article summaries, emphasizing abstract for generic titles
   const articleSummaries = cluster.articles
-    .map((a, i) => `${i + 1}. "${a.title}" - ${a.abstract}`)
+    .map((a, i) => {
+      const titlePart = isGenericTitle(a.title)
+        ? `[Live Blog]`
+        : `"${a.title}"`;
+      const keywordsPart = a.keywords.length > 0
+        ? `\n   Keywords: ${a.keywords.slice(0, 5).join(", ")}`
+        : "";
+      return `${i + 1}. ${titlePart}\n   ${a.abstract}${keywordsPart}`;
+    })
     .join("\n\n");
+
+  // Check if this is a live blog cluster
+  const hasLiveBlogs = cluster.articles.some((a) => isGenericTitle(a.title) || a.isLiveBlog);
 
   try {
     const response = await openai.chat.completions.create({
@@ -157,8 +182,14 @@ export async function generateClusterTitleAndSummary(
         {
           role: "system",
           content: `You are a news editor. Given a cluster of related news articles, generate:
-1. A compelling, concise headline (5-10 words) that captures the essence of the story
+1. A compelling, specific headline (5-10 words) that captures WHAT the story is about
 2. A brief 1-2 sentence summary of the key developments
+
+IMPORTANT:
+- Some articles may be marked as [Live Blog] with generic titles - focus on their ABSTRACTS and KEYWORDS to understand the actual topic
+- The headline must be SPECIFIC about the subject (e.g., "Major Snowstorm Hits Northeast" not "Latest Developments")
+- Never use generic phrases like "Latest Developments", "Ongoing Events", "Here's What's Happening"
+${hasLiveBlogs ? "- This cluster contains live blogs - identify the BREAKING NEWS topic from the abstracts" : ""}
 
 Respond in JSON format: {"title": "...", "summary": "..."}`,
         },

@@ -370,8 +370,10 @@ export function normalizeArticle(raw: NYTArticle): Article {
     lowerTitle.includes("live update") ||
     lowerTitle.includes("here's the latest") ||
     lowerTitle.includes("here's what") ||
+    lowerTitle.includes("heres the latest") || // without apostrophe
     lowerTitle.includes("what we know") ||
     lowerTitle.includes("what to know") ||
+    lowerTitle === "here's the latest." || // exact match with period
     lowerMaterial.includes("briefing") ||
     lowerMaterial.includes("live") ||
     raw.item_type?.toLowerCase() === "liveblog";
