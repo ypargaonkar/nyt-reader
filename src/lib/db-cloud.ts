@@ -501,3 +501,74 @@ export async function clearClustersCloud(): Promise<void> {
     args: [],
   });
 }
+
+// API call tracking
+export async function recordApiCallCloud(endpoint: string): Promise<void> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return;
+
+  await client.execute({
+    sql: `INSERT INTO api_calls (endpoint, called_at) VALUES (?, ?)`,
+    args: [endpoint, new Date().toISOString()],
+  });
+}
+
+export async function getTodayApiCallCountCloud(): Promise<number> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return 0;
+
+  const today = new Date().toISOString().split("T")[0];
+  const result = await client.execute({
+    sql: `SELECT COUNT(*) as count FROM api_calls WHERE called_at >= ?`,
+    args: [today],
+  });
+
+  return (result.rows[0]?.count as number) || 0;
+}
+
+export async function getLastApiCallTimeCloud(): Promise<number | null> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return null;
+
+  const result = await client.execute({
+    sql: `SELECT called_at FROM api_calls ORDER BY called_at DESC LIMIT 1`,
+    args: [],
+  });
+
+  if (result.rows.length === 0) return null;
+  return new Date(result.rows[0].called_at as string).getTime();
+}
+
+export async function getRecentApiCallsCloud(minutes: number): Promise<number> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return 0;
+
+  const since = new Date(Date.now() - minutes * 60 * 1000).toISOString();
+  const result = await client.execute({
+    sql: `SELECT COUNT(*) as count FROM api_calls WHERE called_at >= ?`,
+    args: [since],
+  });
+
+  return (result.rows[0]?.count as number) || 0;
+}
+
+export async function getLast24HoursApiCallsCloud(): Promise<{ endpoint: string; called_at: string }[]> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return [];
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const result = await client.execute({
+    sql: `SELECT endpoint, called_at FROM api_calls WHERE called_at >= ? ORDER BY called_at DESC`,
+    args: [since],
+  });
+
+  return result.rows.map((row) => ({
+    endpoint: row.endpoint as string,
+    called_at: row.called_at as string,
+  }));
+}

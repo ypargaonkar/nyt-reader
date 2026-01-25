@@ -17,6 +17,8 @@ import {
   getCachedArticlesCloud,
   getReadArticleUrisCloud,
   getLastFetchTimeCloud,
+  recordApiCallCloud,
+  getTodayApiCallCountCloud,
 } from "@/lib/db-cloud";
 import type { FeedSection } from "@/lib/types";
 
@@ -76,8 +78,10 @@ export async function GET(request: NextRequest) {
         // Fetch fresh articles from NYT API
         allArticles = await fetchComprehensiveFeed(apiKey);
 
-        // Record and cache
+        // Record API calls and cache
         if (useCloud) {
+          await recordApiCallCloud("timeswire");
+          await recordApiCallCloud("topstories");
           await cacheArticlesCloud(allArticles);
         } else {
           recordApiCall("timeswire");
@@ -94,12 +98,14 @@ export async function GET(request: NextRequest) {
     const readUris = useCloud ? await getReadArticleUrisCloud() : getReadArticleUris();
     const unreadArticles = sectionArticles.filter((a) => !readUris.has(a.uri));
 
+    const apiCallsToday = useCloud ? await getTodayApiCallCountCloud() : getTodayApiCallCount();
+
     return NextResponse.json({
       articles: unreadArticles,
       allArticles: allArticles.length,
       sectionArticles: sectionArticles.length,
       unread: unreadArticles.length,
-      apiCallsToday: useCloud ? 0 : getTodayApiCallCount(),
+      apiCallsToday,
       section,
       fromCache,
       cacheAge: fromCache && cacheAge !== Infinity ? Math.round(cacheAge / 1000) : null,

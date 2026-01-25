@@ -91,6 +91,15 @@ export async function initTursoSchema(): Promise<void> {
       timespan_end TEXT,
       updated_at TEXT NOT NULL
     );
+
+    -- API call tracking
+    CREATE TABLE IF NOT EXISTS api_calls (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      endpoint TEXT NOT NULL,
+      called_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_api_calls_date ON api_calls(called_at);
   `);
 }
 
