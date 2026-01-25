@@ -132,13 +132,31 @@ export function MagazineStoryCard({
 
   const latestArticle = sortedArticles[0];
 
-  // Check if any article in the cluster is a live blog
-  const hasLiveBlog = cluster.articles.some((a) => a.isLiveBlog);
+  // Helper to check if title is generic (live blog indicator)
+  const isGenericLiveBlogTitle = (title: string) => {
+    const lower = title.toLowerCase();
+    return (
+      lower.includes("here's the latest") ||
+      lower.includes("heres the latest") ||
+      lower.includes("what we know") ||
+      lower.includes("what to know") ||
+      lower.includes("live update")
+    );
+  };
 
-  // Check if the live blog was updated recently (within last 2 hours)
-  const liveBlogArticle = cluster.articles.find((a) => a.isLiveBlog);
+  // Check if any article in the cluster is a live blog (by field OR by title pattern)
+  const hasLiveBlog = cluster.articles.some(
+    (a) => a.isLiveBlog || isGenericLiveBlogTitle(a.title)
+  );
+
+  // Find the live blog article
+  const liveBlogArticle = cluster.articles.find(
+    (a) => a.isLiveBlog || isGenericLiveBlogTitle(a.title)
+  );
+
+  // Check if the live blog was updated recently (within last 6 hours)
   const isActivelyUpdating = liveBlogArticle
-    ? (Date.now() - new Date(liveBlogArticle.updatedDate).getTime()) < 2 * 60 * 60 * 1000
+    ? (Date.now() - new Date(liveBlogArticle.updatedDate).getTime()) < 6 * 60 * 60 * 1000
     : false;
 
   // Shared content component to avoid duplication
@@ -245,10 +263,21 @@ export function MagazineStoryCard({
   );
 
   return (
-    <div className="mb-8">
+    <div className={cn(
+      "mb-8",
+      hasLiveBlog && "relative"
+    )}>
+      {/* Live indicator bar for live blog clusters */}
+      {hasLiveBlog && (
+        <div className="absolute -left-1 top-0 bottom-0 w-1 bg-gradient-to-b from-red-500 via-red-600 to-red-500 rounded-full" />
+      )}
+
       {/* Hero section */}
       <div
-        className="relative cursor-pointer group"
+        className={cn(
+          "relative cursor-pointer group",
+          hasLiveBlog && "ml-3"
+        )}
         onClick={() => setExpanded(!expanded)}
       >
         {/* Case 1: Full-bleed hero image (primary image works) */}
@@ -297,7 +326,12 @@ export function MagazineStoryCard({
 
       {/* Expanded timeline */}
       {expanded && (
-        <div className="mt-6 pl-4 border-l-2 border-blue-200 dark:border-blue-800 space-y-4">
+        <div className={cn(
+          "mt-6 pl-4 border-l-2 space-y-4",
+          hasLiveBlog
+            ? "ml-3 border-red-300 dark:border-red-700"
+            : "border-blue-200 dark:border-blue-800"
+        )}>
           {sortedArticles.map((article, index) => (
             <TimelineArticle
               key={article.uri}
@@ -393,40 +427,54 @@ function TimelineArticle({
         )}
       >
         {/* Date and badges */}
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {format(new Date(article.publishedDate), "MMM d, h:mm a")}
-          </span>
-          {article.isLiveBlog && (
-            <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 gap-1">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
-              </span>
-              LIVE
-            </Badge>
-          )}
-          {isLatest && !article.isLiveBlog && (
-            <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-              Latest
-            </Badge>
-          )}
-          {isRead && (
-            <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-              <Check className="w-3 h-3 mr-0.5" />
-              Read
-            </Badge>
-          )}
-        </div>
-
-        {/* Title - show abstract if title is generic */}
         {(() => {
+          const lower = article.title.toLowerCase();
+          const isLiveBlogArticle = article.isLiveBlog ||
+            lower.includes("here's the latest") ||
+            lower.includes("heres the latest") ||
+            lower === "here's the latest." ||
+            lower.includes("what we know") ||
+            lower.includes("live update");
+
+          return (
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {format(new Date(article.publishedDate), "MMM d, h:mm a")}
+              </span>
+              {isLiveBlogArticle && (
+                <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 gap-1">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                  </span>
+                  LIVE
+                </Badge>
+              )}
+              {isLatest && !isLiveBlogArticle && (
+                <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  Latest
+                </Badge>
+              )}
+              {isRead && (
+                <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                  <Check className="w-3 h-3 mr-0.5" />
+                  Read
+                </Badge>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Title - show abstract if title is generic live blog */}
+        {(() => {
+          const lower = article.title.toLowerCase();
           const isGenericTitle =
-            article.title.toLowerCase().includes("here's the latest") ||
-            article.title.toLowerCase().includes("heres the latest") ||
-            article.title.toLowerCase() === "here's the latest." ||
-            article.title.toLowerCase().includes("what we know") ||
-            article.title.toLowerCase().includes("live updates");
+            lower.includes("here's the latest") ||
+            lower.includes("heres the latest") ||
+            lower === "here's the latest." ||
+            lower.includes("what we know") ||
+            lower.includes("what to know") ||
+            lower.includes("live update");
 
           const displayTitle = isGenericTitle && article.abstract
             ? article.abstract
