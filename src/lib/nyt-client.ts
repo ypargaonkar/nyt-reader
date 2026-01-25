@@ -233,6 +233,14 @@ export function isEnglishArticle(raw: NYTArticle): boolean {
   return true;
 }
 
+// Check if an article is an old live blog (older than 12 hours)
+export function isOldLiveBlog(article: Article): boolean {
+  if (!article.isLiveBlog) return false;
+  const twelveHoursAgo = Date.now() - 12 * 60 * 60 * 1000;
+  const articleTime = new Date(article.updatedDate || article.publishedDate).getTime();
+  return articleTime < twelveHoursAgo;
+}
+
 // Normalize NYT API response to our Article format
 export function normalizeArticle(raw: NYTArticle): Article {
   // Extract byline
@@ -364,16 +372,16 @@ export function normalizeArticle(raw: NYTArticle): Article {
     raw.document_type === "multimedia";
 
   // Detect live blogs - these have continuously updating content
-  const lowerTitle = title.toLowerCase();
+  // Normalize curly quotes to straight quotes for matching
+  const normalizedTitle = title.replace(/[\u2018\u2019]/g, "'").toLowerCase();
   const lowerMaterial = materialType.toLowerCase();
   const isLiveBlog =
-    lowerTitle.includes("live update") ||
-    lowerTitle.includes("here's the latest") ||
-    lowerTitle.includes("here's what") ||
-    lowerTitle.includes("heres the latest") || // without apostrophe
-    lowerTitle.includes("what we know") ||
-    lowerTitle.includes("what to know") ||
-    lowerTitle === "here's the latest." || // exact match with period
+    normalizedTitle.includes("live update") ||
+    normalizedTitle.includes("here's the latest") ||
+    normalizedTitle.includes("here's what") ||
+    normalizedTitle.includes("heres the latest") || // without apostrophe
+    normalizedTitle.includes("what we know") ||
+    normalizedTitle.includes("what to know") ||
     lowerMaterial.includes("briefing") ||
     lowerMaterial.includes("live") ||
     raw.item_type?.toLowerCase() === "liveblog";
@@ -572,13 +580,19 @@ export async function fetchComprehensiveFeed(apiKey: string): Promise<Article[]>
 
   // Add top stories first (higher priority)
   topStories.forEach((article) => {
-    articleMap.set(article.uri, article);
+    // Filter out old live blogs (older than 12 hours)
+    if (!isOldLiveBlog(article)) {
+      articleMap.set(article.uri, article);
+    }
   });
 
   // Add wire articles (fills in the rest)
   wireArticles.forEach((article) => {
     if (!articleMap.has(article.uri)) {
-      articleMap.set(article.uri, article);
+      // Filter out old live blogs (older than 12 hours)
+      if (!isOldLiveBlog(article)) {
+        articleMap.set(article.uri, article);
+      }
     }
   });
 

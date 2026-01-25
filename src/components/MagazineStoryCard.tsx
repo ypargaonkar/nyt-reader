@@ -134,13 +134,14 @@ export function MagazineStoryCard({
 
   // Helper to check if title is generic (live blog indicator)
   const isGenericLiveBlogTitle = (title: string) => {
-    const lower = title.toLowerCase();
+    // Normalize curly quotes to straight quotes for matching
+    const normalized = title.replace(/[\u2018\u2019]/g, "'").toLowerCase();
     return (
-      lower.includes("here's the latest") ||
-      lower.includes("heres the latest") ||
-      lower.includes("what we know") ||
-      lower.includes("what to know") ||
-      lower.includes("live update")
+      normalized.includes("here's the latest") ||
+      normalized.includes("heres the latest") ||
+      normalized.includes("what we know") ||
+      normalized.includes("what to know") ||
+      normalized.includes("live update")
     );
   };
 
@@ -428,13 +429,13 @@ function TimelineArticle({
       >
         {/* Date and badges */}
         {(() => {
-          const lower = article.title.toLowerCase();
+          // Normalize curly quotes for matching
+          const normalized = article.title.replace(/[\u2018\u2019]/g, "'").toLowerCase();
           const isLiveBlogArticle = article.isLiveBlog ||
-            lower.includes("here's the latest") ||
-            lower.includes("heres the latest") ||
-            lower === "here's the latest." ||
-            lower.includes("what we know") ||
-            lower.includes("live update");
+            normalized.includes("here's the latest") ||
+            normalized.includes("heres the latest") ||
+            normalized.includes("what we know") ||
+            normalized.includes("live update");
 
           return (
             <div className="flex items-center gap-2 mb-2">
@@ -467,18 +468,28 @@ function TimelineArticle({
 
         {/* Title - show abstract if title is generic live blog */}
         {(() => {
-          const lower = article.title.toLowerCase();
-          const isGenericTitle =
-            lower.includes("here's the latest") ||
-            lower.includes("heres the latest") ||
-            lower === "here's the latest." ||
-            lower.includes("what we know") ||
-            lower.includes("what to know") ||
-            lower.includes("live update");
+          // Normalize quotes (curly to straight) for matching
+          const normalizedTitle = article.title
+            .replace(/[\u2018\u2019]/g, "'") // Curly single quotes to straight
+            .toLowerCase();
 
-          const displayTitle = isGenericTitle && article.abstract
-            ? article.abstract
-            : article.title;
+          const isGenericTitle =
+            normalizedTitle.includes("here's the latest") ||
+            normalizedTitle.includes("heres the latest") ||
+            normalizedTitle.includes("what we know") ||
+            normalizedTitle.includes("what to know") ||
+            normalizedTitle.includes("live update");
+
+          // For generic titles, show abstract or create description from keywords
+          let displayText = article.title;
+          if (isGenericTitle) {
+            if (article.abstract && article.abstract.length > 20) {
+              displayText = article.abstract;
+            } else if (article.keywords && article.keywords.length > 0) {
+              // Fallback: Create description from keywords + section
+              displayText = `${article.section}: ${article.keywords.slice(0, 3).join(", ")}`;
+            }
+          }
 
           return (
             <h3
@@ -489,7 +500,7 @@ function TimelineArticle({
               )}
               onClick={() => openArticleLink(article.url)}
             >
-              {displayTitle}
+              {displayText}
             </h3>
           );
         })()}

@@ -94,6 +94,17 @@ export function clusterArticles(
       const otherEmbedding = embeddings.get(other.uri);
       if (!otherEmbedding) continue;
 
+      // Check if both are live blogs with generic titles - require same section
+      const articleIsGenericLiveBlog = isGenericTitle(article.title);
+      const otherIsGenericLiveBlog = isGenericTitle(other.title);
+
+      if (articleIsGenericLiveBlog && otherIsGenericLiveBlog) {
+        // Both are generic live blogs - only cluster if same section
+        if (article.section.toLowerCase() !== other.section.toLowerCase()) {
+          continue; // Skip - different sections shouldn't cluster
+        }
+      }
+
       const similarity = cosineSimilarity(embedding, otherEmbedding);
       if (similarity >= similarityThreshold) {
         clusterArticles.push(other);
@@ -150,14 +161,15 @@ export function clusterArticles(
 
 // Check if a title is generic/unhelpful
 function isGenericTitle(title: string): boolean {
-  const lower = title.toLowerCase();
+  // Normalize curly quotes to straight quotes
+  const normalized = title.replace(/[\u2018\u2019]/g, "'").toLowerCase();
   return (
-    lower.includes("here's the latest") ||
-    lower.includes("heres the latest") ||
-    lower.includes("what we know") ||
-    lower.includes("what to know") ||
-    lower === "live updates" ||
-    lower === "breaking news"
+    normalized.includes("here's the latest") ||
+    normalized.includes("heres the latest") ||
+    normalized.includes("what we know") ||
+    normalized.includes("what to know") ||
+    normalized === "live updates" ||
+    normalized === "breaking news"
   );
 }
 
