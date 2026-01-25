@@ -128,8 +128,8 @@ export const useAppStore = create<AppState>()(
         openaiApiKey: "",
         darkMode: false,
         autoRefresh: true,
-        refreshInterval: 15,
-        cacheDuration: 15, // Cache duration in minutes
+        refreshInterval: 8,
+        cacheDuration: 8, // Cache duration in minutes
       },
 
       globalFilters: {

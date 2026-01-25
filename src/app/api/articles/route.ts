@@ -22,8 +22,8 @@ import {
 } from "@/lib/db-cloud";
 import type { FeedSection } from "@/lib/types";
 
-// Cache duration in milliseconds (15 minutes)
-const CACHE_DURATION_MS = 15 * 60 * 1000;
+// Cache duration in milliseconds (8 minutes)
+const CACHE_DURATION_MS = 8 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
