@@ -302,13 +302,22 @@ export function sortClustersByRelevance(
   return scored.map((s) => s.cluster);
 }
 
-// Sort clusters by recency - most recently updated stories first
+// Sort clusters by recency - live blogs first, then most recently updated stories
 export function sortClustersByRecency(clusters: StoryCluster[]): StoryCluster[] {
   const now = new Date().getTime();
   const ONE_HOUR = 60 * 60 * 1000;
   const ONE_DAY = 24 * ONE_HOUR;
 
   const scored = clusters.map((cluster) => {
+    // Check for live blogs in this cluster
+    const hasLiveBlog = cluster.articles.some((a) => a.isLiveBlog);
+
+    // Check if live blog was updated recently (within 6 hours)
+    const liveBlogArticle = cluster.articles.find((a) => a.isLiveBlog);
+    const isActiveLiveBlog = liveBlogArticle
+      ? (now - new Date(liveBlogArticle.updatedDate).getTime()) < 6 * ONE_HOUR
+      : false;
+
     // Get most recent article date
     const mostRecentDate = Math.max(
       ...cluster.articles.map((a) => new Date(a.publishedDate).getTime())
@@ -332,6 +341,13 @@ export function sortClustersByRecency(clusters: StoryCluster[]): StoryCluster[] 
     // - Bonus for cluster size (bigger stories are more significant)
     let score = mostRecentDate;
 
+    // LIVE BLOG PRIORITY: Massive boost for active live blogs
+    if (isActiveLiveBlog) {
+      score += 10 * ONE_DAY; // Push to top - 10 days worth of boost
+    } else if (hasLiveBlog) {
+      score += 5 * ONE_DAY; // Still prioritize, but less than active ones
+    }
+
     // Developing story bonus: multiple articles in last hour
     if (recentArticles >= 2) {
       score += recentArticles * ONE_HOUR; // Boost by 1 hour per recent article
@@ -345,10 +361,10 @@ export function sortClustersByRecency(clusters: StoryCluster[]): StoryCluster[] 
     // Cluster size gives a small boost (significant stories)
     score += cluster.articles.length * (ONE_HOUR / 6); // 10 min per article
 
-    return { cluster, score, mostRecentDate, recentArticles, todayArticles };
+    return { cluster, score, mostRecentDate, recentArticles, todayArticles, hasLiveBlog, isActiveLiveBlog };
   });
 
-  // Sort by score (highest first = most recent/developing)
+  // Sort by score (highest first = live blogs first, then most recent/developing)
   scored.sort((a, b) => b.score - a.score);
 
   return scored.map((s) => s.cluster);
