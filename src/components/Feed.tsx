@@ -1114,14 +1114,10 @@ export function Feed({ onOpenSettings }: FeedProps) {
               Rebuild
             </Button>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              Articles: {lastRefresh ? new Date(lastRefresh).toLocaleTimeString() : "Not yet"}
-            </span>
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
             <span className="flex items-center gap-1">
               <RefreshCw className="w-3 h-3" />
-              Clusters: {lastClusterRefresh ? new Date(lastClusterRefresh).toLocaleTimeString() : "Not yet"}
+              Last clustered: {lastClusterRefresh ? new Date(lastClusterRefresh).toLocaleTimeString() : "Not yet"}
             </span>
           </div>
         </div>
@@ -1208,6 +1204,12 @@ export function Feed({ onOpenSettings }: FeedProps) {
         onFiltersChange={handleFiltersChange}
         availableSections={availableSections}
       />
+
+      {/* Last refresh time */}
+      <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 px-1">
+        <Clock className="w-3 h-3 mr-1" />
+        Last refreshed: {lastRefresh ? new Date(lastRefresh).toLocaleTimeString() : "Not yet"}
+      </div>
 
       {/* Bulk actions toolbar */}
       <div className="flex items-center gap-2 py-2 px-1">
