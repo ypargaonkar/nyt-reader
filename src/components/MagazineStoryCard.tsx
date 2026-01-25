@@ -132,17 +132,41 @@ export function MagazineStoryCard({
 
   const latestArticle = sortedArticles[0];
 
+  // Check if any article in the cluster is a live blog
+  const hasLiveBlog = cluster.articles.some((a) => a.isLiveBlog);
+
+  // Check if the live blog was updated recently (within last 2 hours)
+  const liveBlogArticle = cluster.articles.find((a) => a.isLiveBlog);
+  const isActivelyUpdating = liveBlogArticle
+    ? (Date.now() - new Date(liveBlogArticle.updatedDate).getTime()) < 2 * 60 * 60 * 1000
+    : false;
+
   // Shared content component to avoid duplication
   const CardContent = ({ isDark = true }: { isDark?: boolean }) => (
     <>
       {/* Meta badges */}
       <div className="flex items-center gap-2 mb-3">
-        <Badge className={cn(
-          "border-0",
-          isDark ? "bg-blue-600/90 text-white" : "bg-blue-600 text-white"
-        )}>
-          DEVELOPING
-        </Badge>
+        {hasLiveBlog ? (
+          <Badge className={cn(
+            "border-0 gap-1.5",
+            isDark ? "bg-red-600/90 text-white" : "bg-red-600 text-white"
+          )}>
+            {isActivelyUpdating && (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+              </span>
+            )}
+            LIVE
+          </Badge>
+        ) : (
+          <Badge className={cn(
+            "border-0",
+            isDark ? "bg-blue-600/90 text-white" : "bg-blue-600 text-white"
+          )}>
+            DEVELOPING
+          </Badge>
+        )}
         <span className={isDark ? "text-white/80 text-sm" : "text-gray-500 dark:text-gray-400 text-sm"}>
           {cluster.articles.length} articles
         </span>
@@ -373,7 +397,16 @@ function TimelineArticle({
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {format(new Date(article.publishedDate), "MMM d, h:mm a")}
           </span>
-          {isLatest && (
+          {article.isLiveBlog && (
+            <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 gap-1">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+              </span>
+              LIVE
+            </Badge>
+          )}
+          {isLatest && !article.isLiveBlog && (
             <Badge variant="secondary" className="text-[10px] py-0 h-5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
               Latest
             </Badge>

@@ -90,6 +90,7 @@ export interface Article {
   wordCount: number;
   hasMultimedia: boolean;
   isInteractive: boolean;
+  isLiveBlog: boolean;
   desk: string;
   source: string;
   relevanceScore?: number;

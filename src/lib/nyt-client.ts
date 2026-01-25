@@ -363,6 +363,19 @@ export function normalizeArticle(raw: NYTArticle): Article {
     materialType.toLowerCase().includes("interactive") ||
     raw.document_type === "multimedia";
 
+  // Detect live blogs - these have continuously updating content
+  const lowerTitle = title.toLowerCase();
+  const lowerMaterial = materialType.toLowerCase();
+  const isLiveBlog =
+    lowerTitle.includes("live update") ||
+    lowerTitle.includes("here's the latest") ||
+    lowerTitle.includes("here's what") ||
+    lowerTitle.includes("what we know") ||
+    lowerTitle.includes("what to know") ||
+    lowerMaterial.includes("briefing") ||
+    lowerMaterial.includes("live") ||
+    raw.item_type?.toLowerCase() === "liveblog";
+
   const publishedDate =
     raw.published_date || raw.pub_date || new Date().toISOString();
   const updatedDate =
@@ -391,6 +404,7 @@ export function normalizeArticle(raw: NYTArticle): Article {
       (raw.media && raw.media.length > 0)
     ),
     isInteractive,
+    isLiveBlog,
     desk: raw.desk || raw.news_desk || "",
     source: raw.source || "The New York Times",
   };
