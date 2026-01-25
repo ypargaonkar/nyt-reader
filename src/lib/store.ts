@@ -40,6 +40,7 @@ interface AppState {
   readArticleUris: Set<string>;
   likedArticleUris: Set<string>;
   savedArticleUris: Set<string>;
+  dismissedArticles: Record<string, number>; // uri -> dismissedAt timestamp (kept for 30 days)
   followedJournalists: Set<string>;
   profile: UserProfile | null;
 
@@ -70,6 +71,7 @@ interface AppState {
   markAsLiked: (uri: string) => void;
   saveArticle: (uri: string) => void;
   unsaveArticle: (uri: string) => void;
+  dismissArticle: (uri: string) => void;
   removeArticle: (uri: string) => void;
   removeFromMasterCache: (uri: string) => void;
 
@@ -85,6 +87,7 @@ interface AppState {
   // Hydration
   setReadArticleUris: (uris: Set<string>) => void;
   setLikedArticleUris: (uris: Set<string>) => void;
+  setDismissedArticles: (dismissed: Record<string, number>) => void;
   setSavedArticleUris: (uris: Set<string>) => void;
   setFollowedJournalists: (names: Set<string>) => void;
 
@@ -109,6 +112,7 @@ export const useAppStore = create<AppState>()(
       readArticleUris: new Set(),
       likedArticleUris: new Set(),
       savedArticleUris: new Set(),
+      dismissedArticles: {},
       followedJournalists: new Set(),
       profile: null,
 
@@ -137,11 +141,27 @@ export const useAppStore = create<AppState>()(
 
       // Actions
       setMasterCache: (articles) => {
+        const now = Date.now();
+        const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+        // Clean up old dismissed articles (older than 30 days)
+        const dismissed = get().dismissedArticles;
+        const cleanedDismissed: Record<string, number> = {};
+        for (const [uri, timestamp] of Object.entries(dismissed)) {
+          if (timestamp > thirtyDaysAgo) {
+            cleanedDismissed[uri] = timestamp;
+          }
+        }
+
+        // Filter out dismissed articles
+        const filteredArticles = articles.filter((a) => !(a.uri in cleanedDismissed));
+
         set({
           masterCache: {
-            articles,
-            fetchedAt: Date.now(),
+            articles: filteredArticles,
+            fetchedAt: now,
           },
+          dismissedArticles: cleanedDismissed,
         });
       },
 
@@ -206,6 +226,19 @@ export const useAppStore = create<AppState>()(
         set({ savedArticleUris: newSet });
       },
 
+      dismissArticle: (uri) => {
+        // Add to dismissed with timestamp (kept for 30 days)
+        const newDismissed = { ...get().dismissedArticles, [uri]: Date.now() };
+        set({ dismissedArticles: newDismissed });
+
+        // Remove from filtered articles
+        const filtered = get().filteredArticles.filter((a) => a.uri !== uri);
+        set({ filteredArticles: filtered });
+
+        // Also remove from master cache
+        get().removeFromMasterCache(uri);
+      },
+
       removeArticle: (uri) => {
         const filtered = get().filteredArticles.filter((a) => a.uri !== uri);
         set({ filteredArticles: filtered });
@@ -252,6 +285,8 @@ export const useAppStore = create<AppState>()(
       setLikedArticleUris: (uris) => set({ likedArticleUris: uris }),
 
       setSavedArticleUris: (uris) => set({ savedArticleUris: uris }),
+
+      setDismissedArticles: (dismissed) => set({ dismissedArticles: dismissed }),
 
       setFollowedJournalists: (names) => set({ followedJournalists: names }),
 
@@ -310,6 +345,7 @@ export const useAppStore = create<AppState>()(
         settings: state.settings,
         currentSection: state.currentSection,
         globalFilters: state.globalFilters,
+        dismissedArticles: state.dismissedArticles,
       }),
     }
   )

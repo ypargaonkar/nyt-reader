@@ -47,6 +47,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     markAsLiked,
     saveArticle,
     unsaveArticle,
+    dismissArticle,
     getMasterCache,
     isCacheValid,
     setFollowedJournalists,
@@ -484,9 +485,9 @@ export function Feed({ onOpenSettings }: FeedProps) {
     }
   };
 
-  // Handle dismiss (remove from feed forever, not tracked in history)
+  // Handle dismiss (remove from feed forever, persisted so it never comes back)
   const handleDismiss = async (uri: string) => {
-    markAsRead(uri); // Still removes from UI immediately
+    dismissArticle(uri); // Removes from UI and persists to never show again
 
     try {
       await fetch("/api/interact", {
