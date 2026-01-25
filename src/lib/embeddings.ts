@@ -32,9 +32,18 @@ export async function generateEmbeddings(
 
   for (let i = 0; i < articles.length; i += batchSize) {
     const batch = articles.slice(i, i + batchSize);
-    const inputs = batch.map((article) =>
-      `${article.title}\n\n${article.abstract}\n\nKeywords: ${article.keywords.join(", ")}`
-    );
+    const inputs = batch.map((article) => {
+      // For generic live blog titles, exclude the title from embedding
+      // This prevents unrelated live blogs from clustering together
+      const titlePart = isGenericTitle(article.title)
+        ? "" // Don't include generic titles
+        : `${article.title}\n\n`;
+
+      // Include section for better topic separation
+      const sectionPart = article.section ? `Section: ${article.section}\n` : "";
+
+      return `${titlePart}${article.abstract}\n\n${sectionPart}Keywords: ${article.keywords.join(", ")}`;
+    });
 
     try {
       const response = await openai.embeddings.create({
@@ -59,7 +68,7 @@ export async function generateEmbeddings(
 export function clusterArticles(
   articles: Article[],
   embeddings: Map<string, number[]>,
-  similarityThreshold: number = 0.68
+  similarityThreshold: number = 0.72 // Increased from 0.68 for stricter clustering
 ): StoryCluster[] {
   const clusters: StoryCluster[] = [];
   const assigned = new Set<string>();
