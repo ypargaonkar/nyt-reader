@@ -79,10 +79,10 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                 )}
               </Button>
 
-              {/* Menu - hidden on mobile, shown on desktop */}
+              {/* User menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-11 w-11 hidden md:flex touch-manipulation">
+                  <Button variant="ghost" size="icon" className="h-11 w-11 touch-manipulation">
                     <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
