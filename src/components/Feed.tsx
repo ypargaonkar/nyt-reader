@@ -16,6 +16,7 @@ import { rankArticles, rankForDiscovery, categorizeForNewspaper, type NewspaperL
 import { filterArticlesBySection } from "@/lib/nyt-client";
 import { useAutoScheduler } from "@/lib/useAutoScheduler";
 import type { Article, FeedSection, StoryCluster } from "@/lib/types";
+import { openArticleLink } from "@/lib/utils";
 
 interface FeedProps {
   onOpenSettings: () => void;
@@ -724,7 +725,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
           if (selectedIndex >= 0 && selectedIndex < articlesCount) {
             e.preventDefault();
             const article = currentArticles[selectedIndex];
-            window.open(article.url, "_blank");
+            openArticleLink(article.url);
           }
           break;
 

@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Article } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 import { useState } from "react";
 
 interface ArticlePreviewProps {
@@ -191,7 +191,7 @@ export function ArticlePreview({
             <Button
               variant="default"
               className="gap-2"
-              onClick={() => window.open(article.url, "_blank")}
+              onClick={() => openArticleLink(article.url)}
             >
               <ExternalLink className="w-4 h-4" />
               Read Full Article

@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { StoryCluster } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 
 interface StoryClusterProps {
   cluster: StoryCluster;
@@ -178,7 +178,7 @@ export function StoryClusterCard({
                   className="cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    window.open(article.url, "_blank");
+                    openArticleLink(article.url);
                   }}
                 >
                   {idx === 0 && (
@@ -387,7 +387,7 @@ export function StoryClusterCard({
                 className="gap-1.5 h-8"
                 onClick={() => {
                   cluster.articles.forEach((article) => {
-                    window.open(article.url, "_blank");
+                    openArticleLink(article.url);
                   });
                 }}
               >

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Article } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 
 interface ArticleCardProps {
   article: Article;
@@ -101,7 +101,7 @@ export function ArticleCard({
   // Just open the article without marking as read
   const handleOpen = () => {
     onOpen?.(article.uri);
-    window.open(article.url, "_blank");
+    openArticleLink(article.url);
   };
 
   const handleLike = (e: React.MouseEvent) => {

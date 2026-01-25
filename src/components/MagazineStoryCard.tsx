@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { StoryCluster, Article } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 
 // NYT image size suffixes from largest to smallest
 const IMAGE_SIZES = [
@@ -209,7 +209,7 @@ export function MagazineStoryCard({
             }
             onClick={(e) => {
               e.stopPropagation();
-              window.open(latestArticle.url, "_blank");
+              openArticleLink(latestArticle.url);
             }}
           >
             <ExternalLink className="w-4 h-4 mr-1" />
@@ -392,7 +392,7 @@ function TimelineArticle({
             "font-medium text-sm md:text-base leading-snug mb-1 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors",
             isRead && "text-gray-500 dark:text-gray-400"
           )}
-          onClick={() => window.open(article.url, "_blank")}
+          onClick={() => openArticleLink(article.url)}
         >
           {article.title}
         </h3>
@@ -469,7 +469,7 @@ function TimelineArticle({
             <Check className={cn("w-4 h-4", isRead && "stroke-[3px]")} />
           </button>
           <button
-            onClick={() => window.open(article.url, "_blank")}
+            onClick={() => openArticleLink(article.url)}
             className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 ml-auto"
             title="Open article"
           >

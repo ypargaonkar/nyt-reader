@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { SwipeableCard } from "@/components/SwipeableCard";
 import type { Article } from "@/lib/types";
 import type { NewspaperLayout as LayoutType } from "@/lib/smart-ranker";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 
 // Section color mapping for visual coding
 const sectionColors: Record<string, { bg: string; text: string; accent: string }> = {
@@ -477,7 +477,7 @@ function HeroArticle({
       className="relative group cursor-pointer overflow-hidden rounded-2xl bg-gray-900 text-white shadow-2xl"
       onClick={() => {
         onOpen(article.uri);
-        window.open(article.url, "_blank");
+        openArticleLink(article.url);
       }}
     >
       {/* Background Image with Ken Burns effect - focused on upper area for faces */}
@@ -489,9 +489,9 @@ function HeroArticle({
       />
 
       {/* Content */}
-      <div className="relative z-10 p-8 md:p-12 min-h-[450px] md:min-h-[550px] flex flex-col justify-end">
-        {/* Top badges */}
-        <div className="absolute top-6 left-6 right-6 flex items-start justify-between">
+      <div className="relative z-10 p-8 md:p-12 min-h-[450px] md:min-h-[550px] flex flex-col">
+        {/* Top badges - inline, not absolute */}
+        <div className="flex items-start justify-between mb-4 flex-shrink-0">
           <div className="flex items-center gap-2 flex-wrap">
             <DateBadge publishedDate={article.publishedDate} />
             <Badge className={cn("uppercase text-xs font-bold backdrop-blur-sm", sectionColor.accent, "text-white")}>
@@ -505,6 +505,9 @@ function HeroArticle({
             </Badge>
           )}
         </div>
+
+        {/* Spacer to push content to bottom */}
+        <div className="flex-1" />
 
         {/* Title & Abstract */}
         <div className="max-w-4xl">
@@ -602,7 +605,7 @@ function FeaturedCard({
       )}
       onClick={() => {
         onOpen(article.uri);
-        window.open(article.url, "_blank");
+        openArticleLink(article.url);
       }}
     >
       {/* Image with overlay - only render if there's an image */}
@@ -720,7 +723,7 @@ function MiniCard({
       )}
       onClick={() => {
         onOpen(article.uri);
-        window.open(article.url, "_blank");
+        openArticleLink(article.url);
       }}
     >
       {/* Image - only render if there's an image */}
@@ -827,7 +830,7 @@ function ScrollCard({
       )}
       onClick={() => {
         onOpen(article.uri);
-        window.open(article.url, "_blank");
+        openArticleLink(article.url);
       }}
     >
       {article.imageUrl && (

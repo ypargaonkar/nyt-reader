@@ -38,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Article } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 
 interface ImmersiveReaderProps {
   article: Article | null;
@@ -441,7 +441,7 @@ export function ImmersiveReader({
               <Button
                 size="lg"
                 onClick={() => {
-                  window.open(article.url, "_blank");
+                  openArticleLink(article.url);
                   onRead(article.uri);
                 }}
                 className="gap-2"

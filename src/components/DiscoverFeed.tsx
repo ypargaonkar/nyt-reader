@@ -14,7 +14,7 @@ import { NYTLogo } from "@/components/NYTLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Article } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, openArticleLink } from "@/lib/utils";
 
 interface DiscoverArticle extends Article {
   relevanceScore: number;
@@ -79,7 +79,7 @@ export function DiscoverFeed({
   const handleOpenArticle = useCallback(() => {
     if (currentArticle) {
       onOpen(currentArticle.uri);
-      window.open(currentArticle.url, "_blank");
+      openArticleLink(currentArticle.url);
     }
   }, [currentArticle, onOpen]);
 
