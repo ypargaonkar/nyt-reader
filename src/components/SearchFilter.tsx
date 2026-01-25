@@ -97,36 +97,36 @@ export function SearchFilter({
 
   return (
     <div className="space-y-3">
-      {/* Search bar with quick filters */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={filters.searchQuery}
-            onChange={(e) =>
-              onFiltersChange({ ...filters, searchQuery: e.target.value })
-            }
-            className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          {filters.searchQuery && (
-            <button
-              onClick={() => onFiltersChange({ ...filters, searchQuery: "" })}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+      {/* Search bar - full width on mobile */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search articles..."
+          value={filters.searchQuery}
+          onChange={(e) =>
+            onFiltersChange({ ...filters, searchQuery: e.target.value })
+          }
+          className="w-full pl-10 pr-10 py-2 border rounded-lg bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {filters.searchQuery && (
+          <button
+            onClick={() => onFiltersChange({ ...filters, searchQuery: "" })}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
-        {/* Quick filter buttons - NEW, 6H, TODAY */}
+      {/* Quick filter buttons row */}
+      <div className="flex gap-2">
         <Button
           variant={filters.quickFilter === "new" ? "default" : "outline"}
           size="sm"
           onClick={() => toggleQuickFilter("new")}
           className={cn(
-            "gap-1.5 font-medium whitespace-nowrap",
+            "gap-1.5 font-medium whitespace-nowrap flex-1 md:flex-none",
             filters.quickFilter === "new"
               ? "bg-red-500 hover:bg-red-600 text-white"
               : "hover:border-red-300 hover:text-red-600"
@@ -141,7 +141,7 @@ export function SearchFilter({
           size="sm"
           onClick={() => toggleQuickFilter("6h")}
           className={cn(
-            "gap-1.5 font-medium whitespace-nowrap",
+            "gap-1.5 font-medium whitespace-nowrap flex-1 md:flex-none",
             filters.quickFilter === "6h"
               ? "bg-blue-500 hover:bg-blue-600 text-white"
               : "hover:border-blue-300 hover:text-blue-600"
@@ -156,7 +156,7 @@ export function SearchFilter({
           size="sm"
           onClick={() => toggleQuickFilter("today")}
           className={cn(
-            "gap-1.5 font-medium whitespace-nowrap",
+            "gap-1.5 font-medium whitespace-nowrap flex-1 md:flex-none",
             filters.quickFilter === "today"
               ? "bg-green-500 hover:bg-green-600 text-white"
               : "hover:border-green-300 hover:text-green-600"
@@ -171,7 +171,7 @@ export function SearchFilter({
           variant={hasActiveFilters && !filters.quickFilter ? "default" : "outline"}
           size="icon"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="relative"
+          className="relative flex-shrink-0"
         >
           <Filter className="w-4 h-4" />
           {activeFilterCount > 0 && !filters.quickFilter && (
