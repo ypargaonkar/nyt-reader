@@ -63,6 +63,20 @@ export async function getCachedArticlesCloud(limit: number = 100): Promise<Artic
   return result.rows.map((row) => JSON.parse(row.data as string));
 }
 
+export async function getLastFetchTimeCloud(): Promise<number | null> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return null;
+
+  const result = await client.execute({
+    sql: `SELECT MAX(fetched_at) as last_fetch FROM articles`,
+    args: [],
+  });
+
+  if (result.rows.length === 0 || !result.rows[0].last_fetch) return null;
+  return new Date(result.rows[0].last_fetch as string).getTime();
+}
+
 // Interaction operations
 export async function recordInteractionCloud(articleUri: string, action: InteractionType): Promise<void> {
   await ensureSchema();

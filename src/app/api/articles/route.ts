@@ -16,6 +16,7 @@ import {
   cacheArticlesCloud,
   getCachedArticlesCloud,
   getReadArticleUrisCloud,
+  getLastFetchTimeCloud,
 } from "@/lib/db-cloud";
 import type { FeedSection } from "@/lib/types";
 
@@ -39,19 +40,20 @@ export async function GET(request: NextRequest) {
   try {
     let allArticles;
     let fromCache = false;
+    let cacheAge: number;
 
     // Check if we have valid cached articles (unless force refresh)
-    const lastCallTime = useCloud ? null : getLastApiCallTime();
-    const cacheAge = lastCallTime ? Date.now() - lastCallTime : Infinity;
-    const cacheValid = !useCloud && cacheAge < CACHE_DURATION_MS;
+    const lastCallTime = useCloud ? await getLastFetchTimeCloud() : getLastApiCallTime();
+    cacheAge = lastCallTime ? Date.now() - lastCallTime : Infinity;
+    const cacheValid = cacheAge < CACHE_DURATION_MS;
 
     if (!forceRefresh && cacheValid) {
       // Use cached articles - NO API CALL
-      allArticles = getCachedArticles(600);
-      fromCache = true;
-    } else if (!forceRefresh && useCloud) {
-      // Try cloud cache first
-      allArticles = await getCachedArticlesCloud(600);
+      if (useCloud) {
+        allArticles = await getCachedArticlesCloud(600);
+      } else {
+        allArticles = getCachedArticles(600);
+      }
       if (allArticles.length > 0) {
         fromCache = true;
       }
@@ -100,7 +102,7 @@ export async function GET(request: NextRequest) {
       apiCallsToday: useCloud ? 0 : getTodayApiCallCount(),
       section,
       fromCache,
-      cacheAge: cacheValid ? Math.round(cacheAge / 1000) : null,
+      cacheAge: fromCache && cacheAge !== Infinity ? Math.round(cacheAge / 1000) : null,
     });
   } catch (error) {
     console.error("Error fetching articles:", error);
