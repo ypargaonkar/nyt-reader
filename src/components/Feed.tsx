@@ -215,7 +215,14 @@ export function Feed({ onOpenSettings }: FeedProps) {
         // Filter for current section
         const filtered = filterForSection(data.articles, currentSection);
         setFilteredArticles(filtered);
-        setLastRefresh(new Date().toISOString());
+
+        // Calculate actual refresh time from cache age, or use now if fresh fetch
+        if (data.fromCache && data.cacheAge) {
+          const actualRefreshTime = new Date(Date.now() - data.cacheAge * 1000).toISOString();
+          setLastRefresh(actualRefreshTime);
+        } else {
+          setLastRefresh(new Date().toISOString());
+        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to fetch articles"
@@ -294,8 +301,18 @@ export function Feed({ onOpenSettings }: FeedProps) {
       if (res.ok) {
         const data = await res.json();
         setStoryClusters(data.clusters || []);
+
+        // Get the most recent updatedAt from clusters to show when clustering was done
         if (data.clusters?.length > 0) {
-          setLastClusterRefresh(new Date().toISOString());
+          const mostRecentUpdate = data.clusters.reduce((latest: string | null, cluster: { updatedAt?: string }) => {
+            if (!cluster.updatedAt) return latest;
+            if (!latest) return cluster.updatedAt;
+            return new Date(cluster.updatedAt) > new Date(latest) ? cluster.updatedAt : latest;
+          }, null);
+
+          if (mostRecentUpdate) {
+            setLastClusterRefresh(mostRecentUpdate);
+          }
         }
       }
     } catch (error) {
@@ -347,6 +364,8 @@ export function Feed({ onOpenSettings }: FeedProps) {
       });
 
       if (res.ok) {
+        // Set the cluster refresh time to NOW since we just rebuilt them
+        setLastClusterRefresh(new Date().toISOString());
         await fetchClusters();
         await checkEmbeddingsStatus();
       }
@@ -383,6 +402,8 @@ export function Feed({ onOpenSettings }: FeedProps) {
         }),
       });
       if (res.ok) {
+        // Set the cluster refresh time to NOW since we just rebuilt them
+        setLastClusterRefresh(new Date().toISOString());
         // Silently refresh clusters if on stories tab
         if (currentSection === "stories") {
           await fetchClusters();
@@ -391,7 +412,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     } catch (error) {
       console.error("[Scheduled] Failed to rebuild clusters:", error);
     }
-  }, [settings.openaiApiKey, currentSection, fetchClusters]);
+  }, [settings.openaiApiKey, currentSection, fetchClusters, setLastClusterRefresh]);
 
   const scheduledProfileAnalysis = useCallback(async () => {
     if (!settings.openaiApiKey) return;
