@@ -549,14 +549,6 @@ function HeroArticle({
                 onDismiss={() => onDismiss(article.uri)}
                 size="lg"
               />
-              <Button
-                variant="secondary"
-                size="sm"
-                className="gap-2 bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Read
-              </Button>
             </div>
           </div>
         </div>
