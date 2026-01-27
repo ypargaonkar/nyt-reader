@@ -99,6 +99,41 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Normalize section names to canonical forms
+function normalizeSection(section: string): string {
+  const lower = section.toLowerCase().trim();
+
+  // Map variations to canonical names
+  const sectionMap: Record<string, string> = {
+    "us": "U.S.",
+    "u.s.": "U.S.",
+    "u.s": "U.S.",
+    "united states": "U.S.",
+    "world": "World",
+    "politics": "Politics",
+    "business": "Business",
+    "technology": "Technology",
+    "tech": "Technology",
+    "science": "Science",
+    "health": "Health",
+    "sports": "Sports",
+    "arts": "Arts",
+    "books": "Books",
+    "style": "Style",
+    "food": "Food",
+    "travel": "Travel",
+    "magazine": "Magazine",
+    "opinion": "Opinion",
+    "realestate": "Real Estate",
+    "real estate": "Real Estate",
+    "nyregion": "N.Y. Region",
+    "n.y. region": "N.Y. Region",
+    "new york": "N.Y. Region",
+  };
+
+  return sectionMap[lower] || section; // Return original if no mapping
+}
+
 async function updateProfileFromArticle(article: Article, useCloud: boolean) {
   const updateScore = useCloud
     ? (cat: string, val: string, score: number) =>
@@ -108,9 +143,9 @@ async function updateProfileFromArticle(article: Article, useCloud: boolean) {
         return Promise.resolve();
       };
 
-  // Update section score
+  // Update section score (normalized)
   if (article.section) {
-    await updateScore("section", article.section, 1);
+    await updateScore("section", normalizeSection(article.section), 1);
   }
 
   // Update topic scores

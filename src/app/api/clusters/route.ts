@@ -17,6 +17,7 @@ import {
 } from "@/lib/db-cloud";
 import { isTursoConfigured } from "@/lib/turso";
 import { clusterArticles, generateClusterTitleAndSummary, sortClustersByRecency } from "@/lib/embeddings";
+import { isOldLiveBlog } from "@/lib/nyt-client";
 import type { Article, StoryCluster } from "@/lib/types";
 
 export async function GET() {
@@ -40,9 +41,12 @@ export async function GET() {
       const articlesPromises = cluster.articleUris.map((uri) =>
         useCloud ? getCachedArticleCloud(uri) : Promise.resolve(getCachedArticle(uri))
       );
-      const articles = (await Promise.all(articlesPromises)).filter(
+      const allArticles = (await Promise.all(articlesPromises)).filter(
         (a): a is Article => a !== null
       );
+
+      // Filter out old live blogs (>12 hours old)
+      const articles = allArticles.filter((a) => !isOldLiveBlog(a));
 
       return {
         id: cluster.id,

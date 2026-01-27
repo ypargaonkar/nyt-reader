@@ -338,6 +338,15 @@ export function updateProfileScore(
   stmt.run(category, value, scoreIncrement, now, scoreIncrement, now);
 }
 
+export function deleteProfileEntry(category: string, value: string): void {
+  const database = getDb();
+  if (!database) return;
+  const stmt = database.prepare(
+    "DELETE FROM profile WHERE category = ? AND value = ?"
+  );
+  stmt.run(category, value);
+}
+
 export function getProfileEntries(category?: string): ProfileEntry[] {
   const database = getDb();
   if (!database) return [];

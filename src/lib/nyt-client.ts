@@ -233,9 +233,24 @@ export function isEnglishArticle(raw: NYTArticle): boolean {
   return true;
 }
 
+// Check if title indicates a live blog (by pattern, not just the field)
+export function isLiveBlogByTitle(title: string): boolean {
+  const normalized = title.replace(/[\u2018\u2019]/g, "'").toLowerCase();
+  return (
+    normalized.includes("here's the latest") ||
+    normalized.includes("heres the latest") ||
+    normalized.includes("what we know") ||
+    normalized.includes("what to know") ||
+    normalized.includes("live update")
+  );
+}
+
 // Check if an article is an old live blog (older than 12 hours)
 export function isOldLiveBlog(article: Article): boolean {
-  if (!article.isLiveBlog) return false;
+  // Check both the field AND the title pattern (for cached articles without the field)
+  const isLive = article.isLiveBlog || isLiveBlogByTitle(article.title);
+  if (!isLive) return false;
+
   const twelveHoursAgo = Date.now() - 12 * 60 * 60 * 1000;
   const articleTime = new Date(article.updatedDate || article.publishedDate).getTime();
   return articleTime < twelveHoursAgo;

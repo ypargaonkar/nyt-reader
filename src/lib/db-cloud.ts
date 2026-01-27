@@ -252,6 +252,17 @@ export async function updateProfileScoreCloud(category: string, value: string, s
   });
 }
 
+export async function deleteProfileEntryCloud(category: string, value: string): Promise<void> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return;
+
+  await client.execute({
+    sql: `DELETE FROM profile WHERE category = ? AND value = ?`,
+    args: [category, value],
+  });
+}
+
 export async function getProfileEntriesCloud(category?: string): Promise<ProfileEntry[]> {
   await ensureSchema();
   const client = getTursoClient();

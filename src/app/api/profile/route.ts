@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   getProfileEntries,
   getLatestAiInsights,
   getInteractions,
   getTopProfileEntries,
+  deleteProfileEntry,
 } from "@/lib/db";
 import {
   getProfileEntriesCloud,
   getLatestAiInsightsCloud,
   getInteractionsCloud,
   getTopProfileEntriesCloud,
+  deleteProfileEntryCloud,
 } from "@/lib/db-cloud";
 import { isTursoConfigured } from "@/lib/turso";
 import { buildProfileFromEntries } from "@/lib/ai-analyzer";
@@ -96,6 +98,35 @@ export async function GET() {
     console.error("Error fetching profile:", error);
     return NextResponse.json(
       { error: "Failed to fetch profile" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const useCloud = isTursoConfigured();
+
+  try {
+    const { category, value } = await request.json();
+
+    if (!category || !value) {
+      return NextResponse.json(
+        { error: "category and value are required" },
+        { status: 400 }
+      );
+    }
+
+    if (useCloud) {
+      await deleteProfileEntryCloud(category, value);
+    } else {
+      deleteProfileEntry(category, value);
+    }
+
+    return NextResponse.json({ success: true, category, value });
+  } catch (error) {
+    console.error("Error deleting profile entry:", error);
+    return NextResponse.json(
+      { error: "Failed to delete profile entry" },
       { status: 500 }
     );
   }
