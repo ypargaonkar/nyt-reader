@@ -78,9 +78,21 @@ export async function GET() {
     );
 
     // Get top entries for each category
-    const topSections = useCloud
-      ? await getTopProfileEntriesCloud("section", 10)
-      : getTopProfileEntries("section", 10);
+    const rawSections = useCloud
+      ? await getTopProfileEntriesCloud("section", 50) // Get more to consolidate
+      : getTopProfileEntries("section", 50);
+
+    // Normalize and consolidate sections on the fly
+    const sectionScores = new Map<string, number>();
+    for (const entry of rawSections) {
+      const normalized = normalizeSection(entry.value);
+      sectionScores.set(normalized, (sectionScores.get(normalized) || 0) + entry.score);
+    }
+    const topSections = Array.from(sectionScores.entries())
+      .map(([value, score]) => ({ value, score }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+
     const topTopics = useCloud
       ? await getTopProfileEntriesCloud("topic", 15)
       : getTopProfileEntries("topic", 15);
