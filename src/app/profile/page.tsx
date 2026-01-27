@@ -86,26 +86,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleRemoveReporterScore = async (name: string) => {
-    try {
-      await fetch("/api/profile", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: "reporter", value: name }),
-      });
-      // Update local state
-      setProfileData((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          topReporters: prev.topReporters.filter((r) => r.name !== name),
-        };
-      });
-    } catch (error) {
-      console.error("Failed to remove reporter score:", error);
-    }
-  };
-
   useEffect(() => {
     fetchProfile();
   }, []);
@@ -366,43 +346,6 @@ export default function ProfilePage() {
                   ) : (
                     <p className="text-gray-500 text-sm">
                       Follow reporters from article cards to see them here
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Top Reporters (from likes) */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Top Reporters</CardTitle>
-                  <p className="text-xs text-gray-500">
-                    Reporters boosted based on articles you&apos;ve liked
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  {profileData.topReporters.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {profileData.topReporters.slice(0, 12).map((reporter) => (
-                        <Badge
-                          key={reporter.name}
-                          variant="outline"
-                          className="text-sm py-1.5 px-3 gap-2"
-                        >
-                          {reporter.name}
-                          <span className="text-gray-400">({reporter.score})</span>
-                          <button
-                            onClick={() => handleRemoveReporterScore(reporter.name)}
-                            className="hover:text-red-500 transition-colors ml-1"
-                            title={`Remove ${reporter.name} from preferences`}
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-sm">
-                      Like articles to build reporter preferences
                     </p>
                   )}
                 </CardContent>

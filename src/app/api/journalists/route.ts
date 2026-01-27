@@ -4,12 +4,14 @@ import {
   unfollowJournalist,
   isJournalistFollowed,
   getFollowedJournalists,
+  deleteProfileEntry,
 } from "@/lib/db";
 import {
   followJournalistCloud,
   unfollowJournalistCloud,
   isJournalistFollowedCloud,
   getFollowedJournalistsCloud,
+  deleteProfileEntryCloud,
 } from "@/lib/db-cloud";
 import { isTursoConfigured } from "@/lib/turso";
 
@@ -66,8 +68,11 @@ export async function POST(request: NextRequest) {
       if (currentlyFollowed) {
         if (useCloud) {
           await unfollowJournalistCloud(cleanName);
+          // Also remove their profile score boost
+          await deleteProfileEntryCloud("reporter", cleanName);
         } else {
           unfollowJournalist(cleanName);
+          deleteProfileEntry("reporter", cleanName);
         }
         isFollowing = false;
       } else {
@@ -88,8 +93,11 @@ export async function POST(request: NextRequest) {
     } else if (action === "unfollow") {
       if (useCloud) {
         await unfollowJournalistCloud(cleanName);
+        // Also remove their profile score boost
+        await deleteProfileEntryCloud("reporter", cleanName);
       } else {
         unfollowJournalist(cleanName);
+        deleteProfileEntry("reporter", cleanName);
       }
       isFollowing = false;
     } else {
