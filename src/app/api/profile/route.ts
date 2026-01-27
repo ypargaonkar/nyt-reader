@@ -5,6 +5,7 @@ import {
   getInteractions,
   getTopProfileEntries,
   deleteProfileEntry,
+  setProfileScore,
 } from "@/lib/db";
 import {
   getProfileEntriesCloud,
@@ -12,9 +13,44 @@ import {
   getInteractionsCloud,
   getTopProfileEntriesCloud,
   deleteProfileEntryCloud,
+  setProfileScoreCloud,
 } from "@/lib/db-cloud";
 import { isTursoConfigured } from "@/lib/turso";
 import { buildProfileFromEntries } from "@/lib/ai-analyzer";
+
+// Normalize section names to canonical forms
+function normalizeSection(section: string): string {
+  const lower = section.toLowerCase().trim();
+
+  const sectionMap: Record<string, string> = {
+    "us": "U.S.",
+    "u.s.": "U.S.",
+    "u.s": "U.S.",
+    "united states": "U.S.",
+    "world": "World",
+    "politics": "Politics",
+    "business": "Business",
+    "technology": "Technology",
+    "tech": "Technology",
+    "science": "Science",
+    "health": "Health",
+    "sports": "Sports",
+    "arts": "Arts",
+    "books": "Books",
+    "style": "Style",
+    "food": "Food",
+    "travel": "Travel",
+    "magazine": "Magazine",
+    "opinion": "Opinion",
+    "realestate": "Real Estate",
+    "real estate": "Real Estate",
+    "nyregion": "N.Y. Region",
+    "n.y. region": "N.Y. Region",
+    "new york": "N.Y. Region",
+  };
+
+  return sectionMap[lower] || section;
+}
 
 export async function GET() {
   const useCloud = isTursoConfigured();
@@ -127,6 +163,72 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting profile entry:", error);
     return NextResponse.json(
       { error: "Failed to delete profile entry" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Normalize existing section entries (one-time migration)
+export async function POST(request: NextRequest) {
+  const useCloud = isTursoConfigured();
+
+  try {
+    const { action } = await request.json();
+
+    if (action !== "normalize-sections") {
+      return NextResponse.json(
+        { error: "Invalid action. Use 'normalize-sections'" },
+        { status: 400 }
+      );
+    }
+
+    // Get all section entries
+    const sectionEntries = useCloud
+      ? await getProfileEntriesCloud("section")
+      : getProfileEntries("section");
+
+    // Group by normalized name and sum scores
+    const normalized = new Map<string, number>();
+    const toDelete: string[] = [];
+
+    for (const entry of sectionEntries) {
+      const canonicalName = normalizeSection(entry.value);
+      const currentScore = normalized.get(canonicalName) || 0;
+      normalized.set(canonicalName, currentScore + entry.score);
+
+      // Track original values to delete
+      toDelete.push(entry.value);
+    }
+
+    // Delete all old entries
+    for (const value of toDelete) {
+      if (useCloud) {
+        await deleteProfileEntryCloud("section", value);
+      } else {
+        deleteProfileEntry("section", value);
+      }
+    }
+
+    // Create consolidated entries
+    for (const [name, score] of normalized) {
+      if (useCloud) {
+        await setProfileScoreCloud("section", name, score);
+      } else {
+        setProfileScore("section", name, score);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Sections normalized",
+      before: sectionEntries.length,
+      after: normalized.size,
+      sections: Array.from(normalized.entries()).map(([name, score]) => ({ name, score })),
+    });
+  } catch (error) {
+    console.error("Error normalizing sections:", error);
+    return NextResponse.json(
+      { error: "Failed to normalize sections" },
       { status: 500 }
     );
   }

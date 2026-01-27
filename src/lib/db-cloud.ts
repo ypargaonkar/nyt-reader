@@ -263,6 +263,19 @@ export async function deleteProfileEntryCloud(category: string, value: string): 
   });
 }
 
+export async function setProfileScoreCloud(category: string, value: string, score: number): Promise<void> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return;
+
+  const now = new Date().toISOString();
+  await client.execute({
+    sql: `INSERT INTO profile (category, value, score, updated_at) VALUES (?, ?, ?, ?)
+          ON CONFLICT(category, value) DO UPDATE SET score = ?, updated_at = ?`,
+    args: [category, value, score, now, score, now],
+  });
+}
+
 export async function getProfileEntriesCloud(category?: string): Promise<ProfileEntry[]> {
   await ensureSchema();
   const client = getTursoClient();

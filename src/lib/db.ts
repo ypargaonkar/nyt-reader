@@ -347,6 +347,23 @@ export function deleteProfileEntry(category: string, value: string): void {
   stmt.run(category, value);
 }
 
+export function setProfileScore(
+  category: string,
+  value: string,
+  score: number
+): void {
+  const database = getDb();
+  if (!database) return;
+  const stmt = database.prepare(`
+    INSERT INTO profile (category, value, score, updated_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(category, value)
+    DO UPDATE SET score = ?, updated_at = ?
+  `);
+  const now = new Date().toISOString();
+  stmt.run(category, value, score, now, score, now);
+}
+
 export function getProfileEntries(category?: string): ProfileEntry[] {
   const database = getDb();
   if (!database) return [];
