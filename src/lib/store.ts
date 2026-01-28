@@ -4,10 +4,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Article, FeedSection, UserProfile, ApiUsage } from "./types";
 
+type ThemeMode = "light" | "dark" | "system";
+
 interface Settings {
   nytApiKey: string;
   openaiApiKey: string;
-  darkMode: boolean;
+  darkMode: boolean; // deprecated, kept for migration
+  themeMode: ThemeMode;
   autoRefresh: boolean;
   refreshInterval: number; // minutes
   cacheDuration: number; // minutes - how long to cache section data
@@ -126,7 +129,8 @@ export const useAppStore = create<AppState>()(
       settings: {
         nytApiKey: "",
         openaiApiKey: "",
-        darkMode: false,
+        darkMode: false, // deprecated
+        themeMode: "system" as ThemeMode,
         autoRefresh: true,
         refreshInterval: 8,
         cacheDuration: 8, // Cache duration in minutes

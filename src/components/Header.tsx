@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, User, Moon, Sun, RefreshCw, Newspaper } from "lucide-react";
+import { Settings, User, Moon, Sun, RefreshCw, Newspaper, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,14 +24,26 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { settings, updateSettings, lastRefresh } = useAppStore();
 
-  const toggleDarkMode = () => {
-    const newMode = !settings.darkMode;
-    updateSettings({ darkMode: newMode });
-    if (newMode) {
-      document.documentElement.classList.add("dark");
+  const cycleThemeMode = () => {
+    const modes = ["system", "light", "dark"] as const;
+    const currentIndex = modes.indexOf(settings.themeMode || "system");
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    updateSettings({ themeMode: nextMode });
+
+    // Apply immediately
+    if (nextMode === "system") {
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", isDark);
     } else {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.toggle("dark", nextMode === "dark");
     }
+  };
+
+  const getThemeIcon = () => {
+    const mode = settings.themeMode || "system";
+    if (mode === "system") return <Monitor className="h-5 w-5" />;
+    if (mode === "dark") return <Moon className="h-5 w-5" />;
+    return <Sun className="h-5 w-5" />;
   };
 
   return (
@@ -42,12 +54,14 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
             {/* Left side: Logo */}
             <div className="flex items-center gap-2">
               <Link href="/" className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-black dark:bg-white rounded-lg flex items-center justify-center">
-                  <span className="text-white dark:text-black font-serif font-bold text-xl">T</span>
-                </div>
-                <div className="font-serif text-2xl font-bold tracking-tight">
-                  <span className="text-gray-900 dark:text-white">NYT</span>
-                  <span className="text-amber-500"> Reader</span>
+                <img
+                  src="/nyt-t-logo.svg"
+                  alt="NYT"
+                  className="h-9 w-auto dark:invert"
+                />
+                <div className="font-serif tracking-tight">
+                  <span className="text-gray-900 dark:text-white text-sm font-normal">The New York Times</span>
+                  <span className="text-yellow-600 dark:text-yellow-500 text-xl font-bold block -mt-1"> Reader</span>
                 </div>
               </Link>
             </div>
@@ -68,18 +82,15 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                 </Button>
               )}
 
-              {/* Dark mode toggle */}
+              {/* Theme mode toggle */}
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleDarkMode}
+                onClick={cycleThemeMode}
                 className="h-11 w-11 touch-manipulation"
+                title={`Theme: ${settings.themeMode || "system"}`}
               >
-                {settings.darkMode ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {getThemeIcon()}
               </Button>
 
               {/* User menu */}

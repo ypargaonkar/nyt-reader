@@ -31,14 +31,32 @@ export default function Home() {
     clearCache,
   } = useAppStore();
 
-  // Apply dark mode on mount
+  // Apply theme mode on mount and changes
   useEffect(() => {
-    if (settings.darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [settings.darkMode]);
+    const applyTheme = () => {
+      const themeMode = settings.themeMode || "system";
+
+      if (themeMode === "system") {
+        const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.classList.toggle("dark", isDark);
+      } else {
+        document.documentElement.classList.toggle("dark", themeMode === "dark");
+      }
+    };
+
+    applyTheme();
+
+    // Listen for system theme changes when in system mode
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = () => {
+      if (settings.themeMode === "system") {
+        applyTheme();
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [settings.themeMode]);
 
   // Handle section change
   const handleSectionChange = (section: FeedSection) => {

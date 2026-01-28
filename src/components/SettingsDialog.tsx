@@ -151,22 +151,29 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm">Dark mode</p>
+                <p className="text-sm">Theme</p>
                 <p className="text-xs text-gray-500">
-                  Use dark theme for the interface
+                  Choose light, dark, or system theme
                 </p>
               </div>
-              <Switch
-                checked={settings.darkMode}
-                onCheckedChange={(checked) => {
-                  updateSettings({ darkMode: checked });
-                  if (checked) {
-                    document.documentElement.classList.add("dark");
+              <select
+                value={settings.themeMode || "system"}
+                onChange={(e) => {
+                  const mode = e.target.value as "light" | "dark" | "system";
+                  updateSettings({ themeMode: mode });
+                  if (mode === "system") {
+                    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                    document.documentElement.classList.toggle("dark", isDark);
                   } else {
-                    document.documentElement.classList.remove("dark");
+                    document.documentElement.classList.toggle("dark", mode === "dark");
                   }
                 }}
-              />
+                className="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+              >
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
             </div>
           </div>
         </div>

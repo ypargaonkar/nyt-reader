@@ -91,7 +91,10 @@ export function PasswordGate({ children }: PasswordGateProps) {
               <div className="w-16 h-16 bg-black dark:bg-white rounded-2xl flex items-center justify-center mb-4">
                 <Newspaper className="w-8 h-8 text-white dark:text-black" />
               </div>
-              <h1 className="text-2xl font-serif font-bold">NYT <span className="text-amber-500">Reader</span></h1>
+              <h1 className="font-serif text-center">
+                <span className="text-gray-900 dark:text-white text-sm font-normal block">The New York Times</span>
+                <span className="text-yellow-600 dark:text-yellow-500 text-2xl font-bold">Reader</span>
+              </h1>
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                 Enter password to continue
               </p>

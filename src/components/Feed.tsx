@@ -860,7 +860,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
         <Settings className="h-16 w-16 text-gray-300 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Welcome to NYT <span className="text-amber-500">Reader</span></h2>
+        <h2 className="text-xl font-semibold mb-2 font-serif">Welcome to The New York Times <span className="text-yellow-600 dark:text-yellow-500">Reader</span></h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
           To get started, add your New York Times API key in settings. You can
           get a free key at developer.nytimes.com
