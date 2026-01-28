@@ -10,24 +10,24 @@ import type { Article } from "@/lib/types";
 import { cn, openArticleLink } from "@/lib/utils";
 
 // Section color mapping for visual coding
-const sectionColors: Record<string, { badge: string; divider: string }> = {
-  "Politics": { badge: "bg-red-500 text-white", divider: "bg-red-500" },
-  "U.S.": { badge: "bg-blue-500 text-white", divider: "bg-blue-500" },
-  "World": { badge: "bg-emerald-500 text-white", divider: "bg-emerald-500" },
-  "Business": { badge: "bg-amber-500 text-white", divider: "bg-amber-500" },
-  "Technology": { badge: "bg-violet-500 text-white", divider: "bg-violet-500" },
-  "Science": { badge: "bg-cyan-500 text-white", divider: "bg-cyan-500" },
-  "Health": { badge: "bg-pink-500 text-white", divider: "bg-pink-500" },
-  "Sports": { badge: "bg-orange-500 text-white", divider: "bg-orange-500" },
-  "Arts": { badge: "bg-fuchsia-500 text-white", divider: "bg-fuchsia-500" },
-  "Opinion": { badge: "bg-slate-500 text-white", divider: "bg-slate-500" },
-  "Climate": { badge: "bg-green-500 text-white", divider: "bg-green-500" },
-  "New York": { badge: "bg-indigo-500 text-white", divider: "bg-indigo-500" },
-  "Books": { badge: "bg-yellow-500 text-white", divider: "bg-yellow-500" },
-  "Food": { badge: "bg-rose-500 text-white", divider: "bg-rose-500" },
-  "Travel": { badge: "bg-teal-500 text-white", divider: "bg-teal-500" },
-  "Magazine": { badge: "bg-purple-500 text-white", divider: "bg-purple-500" },
-  "default": { badge: "bg-gray-500 text-white", divider: "bg-gray-500" },
+const sectionColors: Record<string, { text: string; divider: string }> = {
+  "Politics": { text: "text-red-600 dark:text-red-400", divider: "bg-red-500" },
+  "U.S.": { text: "text-blue-600 dark:text-blue-400", divider: "bg-blue-500" },
+  "World": { text: "text-emerald-600 dark:text-emerald-400", divider: "bg-emerald-500" },
+  "Business": { text: "text-amber-600 dark:text-amber-400", divider: "bg-amber-500" },
+  "Technology": { text: "text-violet-600 dark:text-violet-400", divider: "bg-violet-500" },
+  "Science": { text: "text-cyan-600 dark:text-cyan-400", divider: "bg-cyan-500" },
+  "Health": { text: "text-pink-600 dark:text-pink-400", divider: "bg-pink-500" },
+  "Sports": { text: "text-orange-600 dark:text-orange-400", divider: "bg-orange-500" },
+  "Arts": { text: "text-fuchsia-600 dark:text-fuchsia-400", divider: "bg-fuchsia-500" },
+  "Opinion": { text: "text-slate-600 dark:text-slate-400", divider: "bg-slate-500" },
+  "Climate": { text: "text-green-600 dark:text-green-400", divider: "bg-green-500" },
+  "New York": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
+  "Books": { text: "text-yellow-600 dark:text-yellow-400", divider: "bg-yellow-500" },
+  "Food": { text: "text-rose-600 dark:text-rose-400", divider: "bg-rose-500" },
+  "Travel": { text: "text-teal-600 dark:text-teal-400", divider: "bg-teal-500" },
+  "Magazine": { text: "text-purple-600 dark:text-purple-400", divider: "bg-purple-500" },
+  "default": { text: "text-gray-600 dark:text-gray-400", divider: "bg-gray-500" },
 };
 
 const getSectionColor = (section: string) => {
@@ -216,11 +216,11 @@ export function ArticleCard({
         {/* Content */}
         <CardContent className="flex-1 p-5">
           <div className="flex flex-col h-full">
-            {/* Section badge - color coded */}
+            {/* Section badge - color coded text */}
             <div className="flex items-center gap-2 mb-2">
-              <Badge className={cn("text-xs font-medium uppercase border-0", sectionColor.badge)}>
+              <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
                 {article.section}
-              </Badge>
+              </span>
               {showRelevanceScore && article.relevanceScore && article.relevanceScore >= 60 && (
                 <span
                   className="ml-auto text-xs text-gray-500 dark:text-gray-400"
