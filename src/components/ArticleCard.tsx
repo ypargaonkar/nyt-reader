@@ -35,7 +35,7 @@ const sectionColors: Record<string, { text: string; divider: string }> = {
   "realestate": { text: "text-lime-600 dark:text-lime-400", divider: "bg-lime-500" },
   "movies": { text: "text-red-600 dark:text-red-400", divider: "bg-red-500" },
   "theater": { text: "text-fuchsia-600 dark:text-fuchsia-400", divider: "bg-fuchsia-500" },
-  "podcasts": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
+  "podcasts": { text: "text-zinc-600 dark:text-zinc-400", divider: "bg-zinc-500" },
   "well": { text: "text-teal-600 dark:text-teal-400", divider: "bg-teal-500" },
   "wellness": { text: "text-teal-600 dark:text-teal-400", divider: "bg-teal-500" },
   "weather": { text: "text-sky-600 dark:text-sky-400", divider: "bg-sky-500" },

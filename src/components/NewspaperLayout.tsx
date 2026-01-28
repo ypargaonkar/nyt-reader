@@ -49,7 +49,7 @@ const sectionColors: Record<string, { bg: string; text: string; accent: string }
   "realestate": { bg: "from-lime-500/20 to-lime-600/10", text: "text-lime-600 dark:text-lime-400", accent: "bg-lime-500" },
   "movies": { bg: "from-red-500/20 to-red-600/10", text: "text-red-600 dark:text-red-400", accent: "bg-red-500" },
   "theater": { bg: "from-fuchsia-500/20 to-fuchsia-600/10", text: "text-fuchsia-600 dark:text-fuchsia-400", accent: "bg-fuchsia-500" },
-  "podcasts": { bg: "from-indigo-500/20 to-indigo-600/10", text: "text-indigo-600 dark:text-indigo-400", accent: "bg-indigo-500" },
+  "podcasts": { bg: "from-zinc-500/20 to-zinc-600/10", text: "text-zinc-600 dark:text-zinc-400", accent: "bg-zinc-500" },
   "well": { bg: "from-teal-500/20 to-teal-600/10", text: "text-teal-600 dark:text-teal-400", accent: "bg-teal-500" },
   "wellness": { bg: "from-teal-500/20 to-teal-600/10", text: "text-teal-600 dark:text-teal-400", accent: "bg-teal-500" },
   "weather": { bg: "from-sky-500/20 to-sky-600/10", text: "text-sky-600 dark:text-sky-400", accent: "bg-sky-500" },
