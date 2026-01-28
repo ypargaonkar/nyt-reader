@@ -44,7 +44,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
               <Link href="/" className="flex items-center gap-2">
                 <div className="font-serif text-2xl font-bold tracking-tight">
                   <span className="text-gray-900 dark:text-white">NYT</span>
-                  <span className="text-blue-600"> Reader</span>
+                  <span className="text-amber-500"> Reader</span>
                 </div>
               </Link>
             </div>
