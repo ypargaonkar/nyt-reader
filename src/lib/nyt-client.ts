@@ -544,6 +544,12 @@ export async function fetchMostPopular(
   return englishResults.map(normalizeArticle);
 }
 
+// Sections to exclude from the feed
+const EXCLUDED_SECTIONS = new Set([
+  "gameplay",
+  "games",
+]);
+
 /**
  * MASTER FETCH - Fetches ALL articles in one go
  * This is the main function to call - fetches everything and caches it
@@ -554,10 +560,11 @@ export async function fetchAllArticles(apiKey: string): Promise<Article[]> {
   // This gets articles from ALL sections
   const wireArticles = await fetchTimesWire("nyt", "all", 500, apiKey);
 
-  // Deduplicate by URI
+  // Deduplicate by URI and filter out excluded sections
   const articleMap = new Map<string, Article>();
   wireArticles.forEach((article) => {
-    if (!articleMap.has(article.uri)) {
+    const sectionLower = article.section.toLowerCase();
+    if (!articleMap.has(article.uri) && !EXCLUDED_SECTIONS.has(sectionLower)) {
       articleMap.set(article.uri, article);
     }
   });
@@ -595,17 +602,19 @@ export async function fetchComprehensiveFeed(apiKey: string): Promise<Article[]>
 
   // Add top stories first (higher priority)
   topStories.forEach((article) => {
-    // Filter out old live blogs (older than 12 hours)
-    if (!isOldLiveBlog(article)) {
+    const sectionLower = article.section.toLowerCase();
+    // Filter out old live blogs and excluded sections
+    if (!isOldLiveBlog(article) && !EXCLUDED_SECTIONS.has(sectionLower)) {
       articleMap.set(article.uri, article);
     }
   });
 
   // Add wire articles (fills in the rest)
   wireArticles.forEach((article) => {
+    const sectionLower = article.section.toLowerCase();
     if (!articleMap.has(article.uri)) {
-      // Filter out old live blogs (older than 12 hours)
-      if (!isOldLiveBlog(article)) {
+      // Filter out old live blogs and excluded sections
+      if (!isOldLiveBlog(article) && !EXCLUDED_SECTIONS.has(sectionLower)) {
         articleMap.set(article.uri, article);
       }
     }
