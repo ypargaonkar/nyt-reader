@@ -23,23 +23,37 @@ import type { Article } from "@/lib/types";
 import type { NewspaperLayout as LayoutType } from "@/lib/smart-ranker";
 import { cn, openArticleLink } from "@/lib/utils";
 
-// Section color mapping for visual coding
+// Section color mapping for visual coding (lowercase keys for case-insensitive lookup)
 const sectionColors: Record<string, { bg: string; text: string; accent: string }> = {
-  "Politics": { bg: "from-red-500/20 to-red-600/10", text: "text-red-600 dark:text-red-400", accent: "bg-red-500" },
-  "U.S.": { bg: "from-blue-500/20 to-blue-600/10", text: "text-blue-600 dark:text-blue-400", accent: "bg-blue-500" },
-  "World": { bg: "from-emerald-500/20 to-emerald-600/10", text: "text-emerald-600 dark:text-emerald-400", accent: "bg-emerald-500" },
-  "Business": { bg: "from-amber-500/20 to-amber-600/10", text: "text-amber-600 dark:text-amber-400", accent: "bg-amber-500" },
-  "Technology": { bg: "from-violet-500/20 to-violet-600/10", text: "text-violet-600 dark:text-violet-400", accent: "bg-violet-500" },
-  "Science": { bg: "from-cyan-500/20 to-cyan-600/10", text: "text-cyan-600 dark:text-cyan-400", accent: "bg-cyan-500" },
-  "Health": { bg: "from-pink-500/20 to-pink-600/10", text: "text-pink-600 dark:text-pink-400", accent: "bg-pink-500" },
-  "Sports": { bg: "from-orange-500/20 to-orange-600/10", text: "text-orange-600 dark:text-orange-400", accent: "bg-orange-500" },
-  "Arts": { bg: "from-fuchsia-500/20 to-fuchsia-600/10", text: "text-fuchsia-600 dark:text-fuchsia-400", accent: "bg-fuchsia-500" },
-  "Opinion": { bg: "from-slate-500/20 to-slate-600/10", text: "text-slate-600 dark:text-slate-400", accent: "bg-slate-500" },
+  "politics": { bg: "from-red-500/20 to-red-600/10", text: "text-red-600 dark:text-red-400", accent: "bg-red-500" },
+  "u.s.": { bg: "from-blue-500/20 to-blue-600/10", text: "text-blue-600 dark:text-blue-400", accent: "bg-blue-500" },
+  "us": { bg: "from-blue-500/20 to-blue-600/10", text: "text-blue-600 dark:text-blue-400", accent: "bg-blue-500" },
+  "world": { bg: "from-emerald-500/20 to-emerald-600/10", text: "text-emerald-600 dark:text-emerald-400", accent: "bg-emerald-500" },
+  "business": { bg: "from-amber-500/20 to-amber-600/10", text: "text-amber-600 dark:text-amber-400", accent: "bg-amber-500" },
+  "technology": { bg: "from-violet-500/20 to-violet-600/10", text: "text-violet-600 dark:text-violet-400", accent: "bg-violet-500" },
+  "science": { bg: "from-cyan-500/20 to-cyan-600/10", text: "text-cyan-600 dark:text-cyan-400", accent: "bg-cyan-500" },
+  "health": { bg: "from-pink-500/20 to-pink-600/10", text: "text-pink-600 dark:text-pink-400", accent: "bg-pink-500" },
+  "sports": { bg: "from-orange-500/20 to-orange-600/10", text: "text-orange-600 dark:text-orange-400", accent: "bg-orange-500" },
+  "arts": { bg: "from-fuchsia-500/20 to-fuchsia-600/10", text: "text-fuchsia-600 dark:text-fuchsia-400", accent: "bg-fuchsia-500" },
+  "opinion": { bg: "from-slate-500/20 to-slate-600/10", text: "text-slate-600 dark:text-slate-400", accent: "bg-slate-500" },
+  "climate": { bg: "from-green-500/20 to-green-600/10", text: "text-green-600 dark:text-green-400", accent: "bg-green-500" },
+  "new york": { bg: "from-indigo-500/20 to-indigo-600/10", text: "text-indigo-600 dark:text-indigo-400", accent: "bg-indigo-500" },
+  "n.y. region": { bg: "from-indigo-500/20 to-indigo-600/10", text: "text-indigo-600 dark:text-indigo-400", accent: "bg-indigo-500" },
+  "nyregion": { bg: "from-indigo-500/20 to-indigo-600/10", text: "text-indigo-600 dark:text-indigo-400", accent: "bg-indigo-500" },
+  "books": { bg: "from-yellow-500/20 to-yellow-600/10", text: "text-yellow-600 dark:text-yellow-400", accent: "bg-yellow-500" },
+  "food": { bg: "from-rose-500/20 to-rose-600/10", text: "text-rose-600 dark:text-rose-400", accent: "bg-rose-500" },
+  "travel": { bg: "from-teal-500/20 to-teal-600/10", text: "text-teal-600 dark:text-teal-400", accent: "bg-teal-500" },
+  "magazine": { bg: "from-purple-500/20 to-purple-600/10", text: "text-purple-600 dark:text-purple-400", accent: "bg-purple-500" },
+  "style": { bg: "from-pink-500/20 to-pink-600/10", text: "text-pink-600 dark:text-pink-400", accent: "bg-pink-500" },
+  "real estate": { bg: "from-lime-500/20 to-lime-600/10", text: "text-lime-600 dark:text-lime-400", accent: "bg-lime-500" },
+  "realestate": { bg: "from-lime-500/20 to-lime-600/10", text: "text-lime-600 dark:text-lime-400", accent: "bg-lime-500" },
+  "movies": { bg: "from-red-500/20 to-red-600/10", text: "text-red-600 dark:text-red-400", accent: "bg-red-500" },
+  "theater": { bg: "from-fuchsia-500/20 to-fuchsia-600/10", text: "text-fuchsia-600 dark:text-fuchsia-400", accent: "bg-fuchsia-500" },
   "default": { bg: "from-gray-500/20 to-gray-600/10", text: "text-gray-600 dark:text-gray-400", accent: "bg-gray-500" },
 };
 
 const getSectionColor = (section: string) => {
-  return sectionColors[section] || sectionColors["default"];
+  return sectionColors[section.toLowerCase()] || sectionColors["default"];
 };
 
 // NYT image size suffixes from largest to smallest for fallback cascade

@@ -9,29 +9,37 @@ import { Badge } from "@/components/ui/badge";
 import type { Article } from "@/lib/types";
 import { cn, openArticleLink } from "@/lib/utils";
 
-// Section color mapping for visual coding
+// Section color mapping for visual coding (lowercase keys for case-insensitive lookup)
 const sectionColors: Record<string, { text: string; divider: string }> = {
-  "Politics": { text: "text-red-600 dark:text-red-400", divider: "bg-red-500" },
-  "U.S.": { text: "text-blue-600 dark:text-blue-400", divider: "bg-blue-500" },
-  "World": { text: "text-emerald-600 dark:text-emerald-400", divider: "bg-emerald-500" },
-  "Business": { text: "text-amber-600 dark:text-amber-400", divider: "bg-amber-500" },
-  "Technology": { text: "text-violet-600 dark:text-violet-400", divider: "bg-violet-500" },
-  "Science": { text: "text-cyan-600 dark:text-cyan-400", divider: "bg-cyan-500" },
-  "Health": { text: "text-pink-600 dark:text-pink-400", divider: "bg-pink-500" },
-  "Sports": { text: "text-orange-600 dark:text-orange-400", divider: "bg-orange-500" },
-  "Arts": { text: "text-fuchsia-600 dark:text-fuchsia-400", divider: "bg-fuchsia-500" },
-  "Opinion": { text: "text-slate-600 dark:text-slate-400", divider: "bg-slate-500" },
-  "Climate": { text: "text-green-600 dark:text-green-400", divider: "bg-green-500" },
-  "New York": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
-  "Books": { text: "text-yellow-600 dark:text-yellow-400", divider: "bg-yellow-500" },
-  "Food": { text: "text-rose-600 dark:text-rose-400", divider: "bg-rose-500" },
-  "Travel": { text: "text-teal-600 dark:text-teal-400", divider: "bg-teal-500" },
-  "Magazine": { text: "text-purple-600 dark:text-purple-400", divider: "bg-purple-500" },
+  "politics": { text: "text-red-600 dark:text-red-400", divider: "bg-red-500" },
+  "u.s.": { text: "text-blue-600 dark:text-blue-400", divider: "bg-blue-500" },
+  "us": { text: "text-blue-600 dark:text-blue-400", divider: "bg-blue-500" },
+  "world": { text: "text-emerald-600 dark:text-emerald-400", divider: "bg-emerald-500" },
+  "business": { text: "text-amber-600 dark:text-amber-400", divider: "bg-amber-500" },
+  "technology": { text: "text-violet-600 dark:text-violet-400", divider: "bg-violet-500" },
+  "science": { text: "text-cyan-600 dark:text-cyan-400", divider: "bg-cyan-500" },
+  "health": { text: "text-pink-600 dark:text-pink-400", divider: "bg-pink-500" },
+  "sports": { text: "text-orange-600 dark:text-orange-400", divider: "bg-orange-500" },
+  "arts": { text: "text-fuchsia-600 dark:text-fuchsia-400", divider: "bg-fuchsia-500" },
+  "opinion": { text: "text-slate-600 dark:text-slate-400", divider: "bg-slate-500" },
+  "climate": { text: "text-green-600 dark:text-green-400", divider: "bg-green-500" },
+  "new york": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
+  "n.y. region": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
+  "nyregion": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
+  "books": { text: "text-yellow-600 dark:text-yellow-400", divider: "bg-yellow-500" },
+  "food": { text: "text-rose-600 dark:text-rose-400", divider: "bg-rose-500" },
+  "travel": { text: "text-teal-600 dark:text-teal-400", divider: "bg-teal-500" },
+  "magazine": { text: "text-purple-600 dark:text-purple-400", divider: "bg-purple-500" },
+  "style": { text: "text-pink-600 dark:text-pink-400", divider: "bg-pink-500" },
+  "real estate": { text: "text-lime-600 dark:text-lime-400", divider: "bg-lime-500" },
+  "realestate": { text: "text-lime-600 dark:text-lime-400", divider: "bg-lime-500" },
+  "movies": { text: "text-red-600 dark:text-red-400", divider: "bg-red-500" },
+  "theater": { text: "text-fuchsia-600 dark:text-fuchsia-400", divider: "bg-fuchsia-500" },
   "default": { text: "text-gray-600 dark:text-gray-400", divider: "bg-gray-500" },
 };
 
 const getSectionColor = (section: string) => {
-  return sectionColors[section] || sectionColors["default"];
+  return sectionColors[section.toLowerCase()] || sectionColors["default"];
 };
 
 interface ArticleCardProps {
