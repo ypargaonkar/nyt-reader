@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, User, Moon, Sun, RefreshCw } from "lucide-react";
+import { Settings, User, Moon, Sun, RefreshCw, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,7 +41,10 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
           <div className="flex h-16 items-center justify-between">
             {/* Left side: Logo */}
             <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-black dark:bg-white rounded-lg flex items-center justify-center">
+                  <span className="text-white dark:text-black font-serif font-bold text-xl">T</span>
+                </div>
                 <div className="font-serif text-2xl font-bold tracking-tight">
                   <span className="text-gray-900 dark:text-white">NYT</span>
                   <span className="text-amber-500"> Reader</span>
