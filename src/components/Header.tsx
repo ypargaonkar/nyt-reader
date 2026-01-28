@@ -53,16 +53,11 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
           <div className="flex h-16 items-center justify-between">
             {/* Left side: Logo */}
             <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-3">
-                <img
-                  src="/nyt-t-logo.svg"
-                  alt="NYT"
-                  className="h-9 w-auto dark:invert"
-                />
-                <div className="font-serif tracking-tight">
-                  <span className="text-gray-900 dark:text-white text-sm font-normal">The New York Times</span>
-                  <span className="text-yellow-600 dark:text-yellow-500 text-xl font-bold block -mt-1"> Reader</span>
-                </div>
+              <Link href="/" className="flex items-center">
+                <span className="font-serif text-xl font-bold tracking-tight">
+                  <span className="text-gray-900 dark:text-white">The New York Times</span>
+                  <span className="text-yellow-600 dark:text-yellow-500"> Reader</span>
+                </span>
               </Link>
             </div>
 
