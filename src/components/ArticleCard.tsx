@@ -10,24 +10,24 @@ import type { Article } from "@/lib/types";
 import { cn, openArticleLink } from "@/lib/utils";
 
 // Section color mapping for visual coding
-const sectionColors: Record<string, { bg: string; text: string; border: string }> = {
-  "Politics": { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-600 dark:text-red-400 border-red-200 dark:border-red-800", border: "border-l-red-500" },
-  "U.S.": { bg: "bg-blue-50 dark:bg-blue-950/30", text: "text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800", border: "border-l-blue-500" },
-  "World": { bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800", border: "border-l-emerald-500" },
-  "Business": { bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800", border: "border-l-amber-500" },
-  "Technology": { bg: "bg-violet-50 dark:bg-violet-950/30", text: "text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800", border: "border-l-violet-500" },
-  "Science": { bg: "bg-cyan-50 dark:bg-cyan-950/30", text: "text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800", border: "border-l-cyan-500" },
-  "Health": { bg: "bg-pink-50 dark:bg-pink-950/30", text: "text-pink-600 dark:text-pink-400 border-pink-200 dark:border-pink-800", border: "border-l-pink-500" },
-  "Sports": { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800", border: "border-l-orange-500" },
-  "Arts": { bg: "bg-fuchsia-50 dark:bg-fuchsia-950/30", text: "text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-200 dark:border-fuchsia-800", border: "border-l-fuchsia-500" },
-  "Opinion": { bg: "bg-slate-50 dark:bg-slate-950/30", text: "text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800", border: "border-l-slate-500" },
-  "Climate": { bg: "bg-green-50 dark:bg-green-950/30", text: "text-green-600 dark:text-green-400 border-green-200 dark:border-green-800", border: "border-l-green-500" },
-  "New York": { bg: "bg-indigo-50 dark:bg-indigo-950/30", text: "text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800", border: "border-l-indigo-500" },
-  "Books": { bg: "bg-yellow-50 dark:bg-yellow-950/30", text: "text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800", border: "border-l-yellow-500" },
-  "Food": { bg: "bg-rose-50 dark:bg-rose-950/30", text: "text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800", border: "border-l-rose-500" },
-  "Travel": { bg: "bg-teal-50 dark:bg-teal-950/30", text: "text-teal-600 dark:text-teal-400 border-teal-200 dark:border-teal-800", border: "border-l-teal-500" },
-  "Magazine": { bg: "bg-purple-50 dark:bg-purple-950/30", text: "text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800", border: "border-l-purple-500" },
-  "default": { bg: "bg-gray-50 dark:bg-gray-950/30", text: "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800", border: "border-l-gray-400" },
+const sectionColors: Record<string, { badge: string; divider: string }> = {
+  "Politics": { badge: "bg-red-500 text-white", divider: "bg-red-500" },
+  "U.S.": { badge: "bg-blue-500 text-white", divider: "bg-blue-500" },
+  "World": { badge: "bg-emerald-500 text-white", divider: "bg-emerald-500" },
+  "Business": { badge: "bg-amber-500 text-white", divider: "bg-amber-500" },
+  "Technology": { badge: "bg-violet-500 text-white", divider: "bg-violet-500" },
+  "Science": { badge: "bg-cyan-500 text-white", divider: "bg-cyan-500" },
+  "Health": { badge: "bg-pink-500 text-white", divider: "bg-pink-500" },
+  "Sports": { badge: "bg-orange-500 text-white", divider: "bg-orange-500" },
+  "Arts": { badge: "bg-fuchsia-500 text-white", divider: "bg-fuchsia-500" },
+  "Opinion": { badge: "bg-slate-500 text-white", divider: "bg-slate-500" },
+  "Climate": { badge: "bg-green-500 text-white", divider: "bg-green-500" },
+  "New York": { badge: "bg-indigo-500 text-white", divider: "bg-indigo-500" },
+  "Books": { badge: "bg-yellow-500 text-white", divider: "bg-yellow-500" },
+  "Food": { badge: "bg-rose-500 text-white", divider: "bg-rose-500" },
+  "Travel": { badge: "bg-teal-500 text-white", divider: "bg-teal-500" },
+  "Magazine": { badge: "bg-purple-500 text-white", divider: "bg-purple-500" },
+  "default": { badge: "bg-gray-500 text-white", divider: "bg-gray-500" },
 };
 
 const getSectionColor = (section: string) => {
@@ -187,8 +187,7 @@ export function ArticleCard({
   return (
     <Card
       className={cn(
-        "group cursor-pointer transition-all duration-300 hover:shadow-lg overflow-hidden border-l-4",
-        sectionColor.border,
+        "group cursor-pointer transition-all duration-300 hover:shadow-lg overflow-hidden",
         isRemoving && "opacity-0 scale-95 -translate-x-4",
         isSelected && "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-900"
       )}
@@ -208,6 +207,9 @@ export function ArticleCard({
                 Interactive
               </Badge>
             )}
+            {/* Colored divider between image and content */}
+            <div className={cn("absolute bottom-0 left-0 right-0 h-1 md:hidden", sectionColor.divider)} />
+            <div className={cn("absolute top-0 bottom-0 right-0 w-1 hidden md:block", sectionColor.divider)} />
           </div>
         )}
 
@@ -216,7 +218,7 @@ export function ArticleCard({
           <div className="flex flex-col h-full">
             {/* Section badge - color coded */}
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className={cn("text-xs font-medium uppercase", sectionColor.text)}>
+              <Badge className={cn("text-xs font-medium uppercase border-0", sectionColor.badge)}>
                 {article.section}
               </Badge>
               {showRelevanceScore && article.relevanceScore && article.relevanceScore >= 60 && (
