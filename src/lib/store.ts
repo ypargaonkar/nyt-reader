@@ -218,6 +218,10 @@ export const useAppStore = create<AppState>()(
         const newSet = new Set(get().savedArticleUris);
         newSet.add(uri);
         set({ savedArticleUris: newSet });
+
+        // Remove from filtered articles (moves to saved section)
+        const filtered = get().filteredArticles.filter((a) => a.uri !== uri);
+        set({ filteredArticles: filtered });
       },
 
       unsaveArticle: (uri) => {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDistanceToNow, format, isToday, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
-import { Heart, Check, Clock, UserPlus, UserCheck, Bookmark, Copy, Square, CheckSquare, Calendar, RefreshCw } from "lucide-react";
+import { Heart, Check, Clock, UserPlus, UserCheck, Bookmark, Copy, Square, CheckSquare, Calendar, RefreshCw, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,7 @@ const sectionColors: Record<string, { text: string; divider: string }> = {
   "health": { text: "text-pink-600 dark:text-pink-400", divider: "bg-pink-500" },
   "sports": { text: "text-orange-600 dark:text-orange-400", divider: "bg-orange-500" },
   "arts": { text: "text-fuchsia-600 dark:text-fuchsia-400", divider: "bg-fuchsia-500" },
-  "opinion": { text: "text-slate-600 dark:text-slate-400", divider: "bg-slate-500" },
+  "opinion": { text: "text-violet-600 dark:text-violet-400", divider: "bg-violet-500" },
   "climate": { text: "text-green-600 dark:text-green-400", divider: "bg-green-500" },
   "new york": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
   "n.y. region": { text: "text-indigo-600 dark:text-indigo-400", divider: "bg-indigo-500" },
@@ -49,6 +49,9 @@ const sectionColors: Record<string, { text: string; divider: string }> = {
   "business day": { text: "text-amber-600 dark:text-amber-400", divider: "bg-amber-500" },
   "en español": { text: "text-orange-600 dark:text-orange-400", divider: "bg-orange-500" },
   "en espanol": { text: "text-orange-600 dark:text-orange-400", divider: "bg-orange-500" },
+  "the learning network": { text: "text-cyan-600 dark:text-cyan-400", divider: "bg-cyan-500" },
+  "learning": { text: "text-cyan-600 dark:text-cyan-400", divider: "bg-cyan-500" },
+  "education": { text: "text-cyan-600 dark:text-cyan-400", divider: "bg-cyan-500" },
   "default": { text: "text-gray-600 dark:text-gray-400", divider: "bg-gray-500" },
 };
 
@@ -61,6 +64,7 @@ interface ArticleCardProps {
   onRead: (uri: string) => void;
   onLike: (uri: string) => void;
   onSave?: (uri: string) => void;
+  onDismiss?: (uri: string) => void;
   onOpen?: (uri: string) => void;
   onFollowJournalist?: (name: string) => void;
   onPreview?: (article: Article) => void;
@@ -96,6 +100,7 @@ export function ArticleCard({
   onRead,
   onLike,
   onSave,
+  onDismiss,
   onOpen,
   onFollowJournalist,
   onPreview,
@@ -380,6 +385,20 @@ export function ArticleCard({
               >
                 <Check className={cn("w-4 h-4", isRead && "fill-current")} />
               </Button>
+              {onDismiss && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 hover:text-red-500"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismiss(article.uri);
+                  }}
+                  title="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"

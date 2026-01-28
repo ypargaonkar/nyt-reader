@@ -495,6 +495,12 @@ export function Feed({ onOpenSettings }: FeedProps) {
   const handleRead = async (uri: string) => {
     markAsRead(uri);
 
+    // Also remove from saved articles if it was saved
+    if (savedArticleUris.has(uri)) {
+      unsaveArticle(uri);
+      setSavedArticles((prev) => prev.filter((a) => a.uri !== uri));
+    }
+
     try {
       await fetch("/api/interact", {
         method: "POST",
@@ -511,6 +517,33 @@ export function Feed({ onOpenSettings }: FeedProps) {
     dismissArticle(uri); // Removes from UI and persists to never show again
 
     try {
+      await fetch("/api/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ articleUri: uri, action: "dismissed" }),
+      });
+    } catch (error) {
+      console.error("Failed to record dismiss:", error);
+    }
+  };
+
+  // Handle dismiss from saved section (also removes from saved)
+  const handleDismissFromSaved = async (uri: string) => {
+    // First unsave it
+    unsaveArticle(uri);
+    setSavedArticles((prev) => prev.filter((a) => a.uri !== uri));
+
+    // Then dismiss it permanently
+    dismissArticle(uri);
+
+    try {
+      // Record unsave
+      await fetch("/api/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ articleUri: uri, action: "saved" }),
+      });
+      // Record dismiss
       await fetch("/api/interact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1369,6 +1402,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
               onRead={handleRead}
               onLike={handleLike}
               onSave={handleSave}
+              onDismiss={currentSection === "saved" ? handleDismissFromSaved : handleDismiss}
               onOpen={handleOpen}
               onFollowJournalist={handleFollowJournalist}
               onPreview={handlePreview}

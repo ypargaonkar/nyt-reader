@@ -35,7 +35,7 @@ const sectionColors: Record<string, { bg: string; text: string; accent: string }
   "health": { bg: "from-pink-500/20 to-pink-600/10", text: "text-pink-600 dark:text-pink-400", accent: "bg-pink-500" },
   "sports": { bg: "from-orange-500/20 to-orange-600/10", text: "text-orange-600 dark:text-orange-400", accent: "bg-orange-500" },
   "arts": { bg: "from-fuchsia-500/20 to-fuchsia-600/10", text: "text-fuchsia-600 dark:text-fuchsia-400", accent: "bg-fuchsia-500" },
-  "opinion": { bg: "from-slate-500/20 to-slate-600/10", text: "text-slate-600 dark:text-slate-400", accent: "bg-slate-500" },
+  "opinion": { bg: "from-violet-500/20 to-violet-600/10", text: "text-violet-600 dark:text-violet-400", accent: "bg-violet-500" },
   "climate": { bg: "from-green-500/20 to-green-600/10", text: "text-green-600 dark:text-green-400", accent: "bg-green-500" },
   "new york": { bg: "from-indigo-500/20 to-indigo-600/10", text: "text-indigo-600 dark:text-indigo-400", accent: "bg-indigo-500" },
   "n.y. region": { bg: "from-indigo-500/20 to-indigo-600/10", text: "text-indigo-600 dark:text-indigo-400", accent: "bg-indigo-500" },
@@ -63,6 +63,9 @@ const sectionColors: Record<string, { bg: string; text: string; accent: string }
   "business day": { bg: "from-amber-500/20 to-amber-600/10", text: "text-amber-600 dark:text-amber-400", accent: "bg-amber-500" },
   "en español": { bg: "from-orange-500/20 to-orange-600/10", text: "text-orange-600 dark:text-orange-400", accent: "bg-orange-500" },
   "en espanol": { bg: "from-orange-500/20 to-orange-600/10", text: "text-orange-600 dark:text-orange-400", accent: "bg-orange-500" },
+  "the learning network": { bg: "from-cyan-500/20 to-cyan-600/10", text: "text-cyan-600 dark:text-cyan-400", accent: "bg-cyan-500" },
+  "learning": { bg: "from-cyan-500/20 to-cyan-600/10", text: "text-cyan-600 dark:text-cyan-400", accent: "bg-cyan-500" },
+  "education": { bg: "from-cyan-500/20 to-cyan-600/10", text: "text-cyan-600 dark:text-cyan-400", accent: "bg-cyan-500" },
   "default": { bg: "from-gray-500/20 to-gray-600/10", text: "text-gray-600 dark:text-gray-400", accent: "bg-gray-500" },
 };
 
