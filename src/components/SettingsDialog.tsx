@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Eye, EyeOff, Check } from "lucide-react";
+import { Eye, EyeOff, Check, Lock, AlertCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,22 +23,74 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { settings, updateSettings } = useAppStore();
   const [nytKey, setNytKey] = useState(settings.nytApiKey);
   const [openaiKey, setOpenaiKey] = useState(settings.openaiApiKey);
+  const [password, setPassword] = useState("");
   const [showNytKey, setShowNytKey] = useState(false);
   const [showOpenaiKey, setShowOpenaiKey] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check if already authenticated
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("nyt-reader-auth");
+    setIsAuthenticated(!!token);
+  }, [open]);
 
   useEffect(() => {
     setNytKey(settings.nytApiKey);
     setOpenaiKey(settings.openaiApiKey);
   }, [settings.nytApiKey, settings.openaiApiKey]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setError("");
+
+    // If saving API keys and not already authenticated, verify password first
+    if (nytKey && !isAuthenticated) {
+      if (!password) {
+        setError("Password required to save API keys");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem("nyt-reader-auth", data.token);
+          setIsAuthenticated(true);
+        } else {
+          setError(data.error || "Invalid password");
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        setError("Authentication failed");
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(false);
+    }
+
+    // Save settings
     updateSettings({
       nytApiKey: nytKey,
       openaiApiKey: openaiKey,
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setPassword("");
+    setTimeout(() => {
+      setSaved(false);
+      onOpenChange(false);
+    }, 1500);
   };
 
   return (
@@ -52,6 +104,54 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Password - only show if not authenticated and adding API keys */}
+          {!isAuthenticated && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password to save API keys"
+                  className="w-full px-3 py-2 border rounded-md pr-10 dark:bg-gray-900 dark:border-gray-700"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500">
+                Required to protect your personalized view
+              </p>
+              {error && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {error}
+                </p>
+              )}
+            </div>
+          )}
+
+          {isAuthenticated && (
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <Check className="h-4 w-4" />
+              Authenticated - your settings are protected
+            </div>
+          )}
+
+          <Separator />
+
           {/* NYT API Key */}
           <div className="space-y-2">
             <label className="text-sm font-medium">NYT API Key</label>
@@ -182,8 +282,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} className="gap-2">
-            {saved ? (
+          <Button onClick={handleSave} disabled={isLoading} className="gap-2">
+            {isLoading ? (
+              "Verifying..."
+            ) : saved ? (
               <>
                 <Check className="h-4 w-4" />
                 Saved!

@@ -17,9 +17,6 @@ import {
   Moon,
   Keyboard,
   Filter,
-  Lock,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsDialog } from "./SettingsDialog";
@@ -31,40 +28,7 @@ interface WelcomePageProps {
 
 export function WelcomePage({ onGetStarted }: WelcomePageProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loginError, setLoginError] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { enterDemoMode } = useAppStore();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError("");
-    setIsLoggingIn(true);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.token) {
-        localStorage.setItem("nyt-reader-auth", data.token);
-        setShowLoginModal(false);
-        setSettingsOpen(true);
-      } else {
-        setLoginError(data.error || "Invalid password");
-      }
-    } catch {
-      setLoginError("Something went wrong");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
 
   const features = [
     {
@@ -176,72 +140,11 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
             Try the demo with live NYT articles - no API keys required
           </p>
           <button
-            onClick={() => setShowLoginModal(true)}
+            onClick={() => setSettingsOpen(true)}
             className="mt-6 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline"
           >
             Log in with API keys
           </button>
-
-          {/* Login Modal */}
-          {showLoginModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-sm border border-gray-200 dark:border-gray-800">
-                <h2 className="text-xl font-semibold mb-2 text-center text-gray-900 dark:text-white">
-                  Welcome back
-                </h2>
-                <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
-                  Enter password to access your account
-                </p>
-
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Password"
-                      className="w-full pl-11 pr-11 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-
-                  {loginError && (
-                    <p className="text-red-500 text-sm text-center">{loginError}</p>
-                  )}
-
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1 py-3 rounded-xl"
-                      onClick={() => {
-                        setShowLoginModal(false);
-                        setPassword("");
-                        setLoginError("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1 py-3 rounded-xl bg-yellow-500 hover:bg-yellow-600"
-                      disabled={isLoggingIn || !password}
-                    >
-                      {isLoggingIn ? "..." : "Log in"}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -339,6 +242,10 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
         <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-xl mx-auto">
           Set up your API keys to start reading. The NYT API is free (500 calls/day).
           OpenAI is optional for AI-powered preference analysis.
+          <br />
+          <span className="text-sm text-gray-500 dark:text-gray-500">
+            Note: A New York Times subscription is required to read full articles.
+          </span>
         </p>
         <Button
           size="lg"
