@@ -13,7 +13,6 @@ import { SwipeableSections } from "@/components/SwipeableSections";
 import { WelcomePage } from "@/components/WelcomePage";
 import { DemoBanner } from "@/components/DemoBanner";
 import { useAppStore } from "@/lib/store";
-import { DEMO_ARTICLES } from "@/lib/demo-data";
 import type { FeedSection } from "@/lib/types";
 
 export default function Home() {
@@ -166,14 +165,28 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleRefresh]);
 
-  // Load demo data when entering demo mode
+  // Load real demo data when entering demo mode
   useEffect(() => {
     if (demoMode && mounted) {
-      setMasterCache(DEMO_ARTICLES);
-      setFilteredArticles(DEMO_ARTICLES);
-      setLastRefresh(new Date().toISOString());
+      const fetchDemoArticles = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch("/api/demo-articles");
+          if (res.ok) {
+            const data = await res.json();
+            setMasterCache(data.articles);
+            setFilteredArticles(data.articles);
+            setLastRefresh(new Date().toISOString());
+          }
+        } catch (error) {
+          console.error("Failed to fetch demo articles:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDemoArticles();
     }
-  }, [demoMode, mounted, setMasterCache, setFilteredArticles, setLastRefresh]);
+  }, [demoMode, mounted, setMasterCache, setFilteredArticles, setLastRefresh, setLoading]);
 
   // Show welcome page if no API key is configured and not in demo mode (after hydration)
   if (mounted && !settings.nytApiKey && !demoMode) {
