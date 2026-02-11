@@ -95,14 +95,6 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
             </Button>
             <Button
               size="lg"
-              onClick={() => setSettingsOpen(true)}
-              className="text-lg px-8 py-6 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
-            >
-              Get Started
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button
-              size="lg"
               variant="outline"
               onClick={() => window.open("https://github.com/ypargaonkar/nyt-reader", "_blank")}
               className="text-lg px-8 py-6"
@@ -112,8 +104,14 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
             </Button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-            Try the demo with sample data - no API keys required
+            Try the demo with live NYT articles - no API keys required
           </p>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="mt-6 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 underline"
+          >
+            Log in with API keys
+          </button>
         </div>
       </div>
 
