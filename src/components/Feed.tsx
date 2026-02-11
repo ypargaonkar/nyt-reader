@@ -57,6 +57,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     globalFilters,
     setGlobalFilters,
     clearGlobalFilters,
+    demoMode,
   } = useAppStore();
 
   const [initialized, setInitialized] = useState(false);
@@ -171,6 +172,11 @@ export function Feed({ onOpenSettings }: FeedProps) {
   // Fetch articles from API (only when cache is invalid or force refresh)
   const fetchArticles = useCallback(
     async (forceRefresh: boolean = false) => {
+      // Skip API calls in demo mode
+      if (demoMode) {
+        return;
+      }
+
       if (!settings.nytApiKey) {
         setError("Please add your NYT API key in settings to view articles.");
         return;
@@ -232,6 +238,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
       }
     },
     [
+      demoMode,
       settings.nytApiKey,
       currentSection,
       filterForSection,
@@ -477,12 +484,12 @@ export function Feed({ onOpenSettings }: FeedProps) {
     }
   }, [currentSection, initialized]);
 
-  // Fetch articles on initial load
+  // Fetch articles on initial load (skip in demo mode - data loaded by page.tsx)
   useEffect(() => {
-    if (initialized && settings.nytApiKey) {
+    if (initialized && settings.nytApiKey && !demoMode) {
       fetchArticles(false);
     }
-  }, [initialized, settings.nytApiKey]); // Only on init, not on section change
+  }, [initialized, settings.nytApiKey, demoMode]); // Only on init, not on section change
 
   // When section changes, filter locally (no API call)
   useEffect(() => {
@@ -855,8 +862,8 @@ export function Feed({ onOpenSettings }: FeedProps) {
     setSelectedIndex(-1);
   }, [currentSection]);
 
-  // Show setup prompt if no API key
-  if (!settings.nytApiKey) {
+  // Show setup prompt if no API key and not in demo mode
+  if (!settings.nytApiKey && !demoMode) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
         <Settings className="h-16 w-16 text-gray-300 mb-4" />

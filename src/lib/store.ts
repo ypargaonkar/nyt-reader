@@ -30,6 +30,9 @@ interface MasterCache {
 }
 
 interface AppState {
+  // Demo mode
+  demoMode: boolean;
+
   // Feed state
   masterCache: MasterCache | null; // ALL articles from API
   filteredArticles: Article[];
@@ -98,12 +101,17 @@ interface AppState {
   followJournalist: (name: string) => void;
   unfollowJournalist: (name: string) => void;
   isJournalistFollowed: (name: string) => boolean;
+
+  // Demo mode actions
+  enterDemoMode: () => void;
+  exitDemoMode: () => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Initial state
+      demoMode: false,
       masterCache: null,
       filteredArticles: [],
       currentSection: "for-you",
@@ -313,6 +321,19 @@ export const useAppStore = create<AppState>()(
       isJournalistFollowed: (name) => {
         return get().followedJournalists.has(name);
       },
+
+      // Demo mode actions
+      enterDemoMode: () => {
+        set({ demoMode: true });
+      },
+
+      exitDemoMode: () => {
+        set({
+          demoMode: false,
+          masterCache: null,
+          filteredArticles: [],
+        });
+      },
     }),
     {
       name: "nyt-reader-storage",
@@ -370,3 +391,4 @@ export const useApiUsage = () => useAppStore((state) => state.apiUsage);
 export const useFollowedJournalists = () => useAppStore((state) => state.followedJournalists);
 export const useSavedArticleUris = () => useAppStore((state) => state.savedArticleUris);
 export const useGlobalFilters = () => useAppStore((state) => state.globalFilters);
+export const useDemoMode = () => useAppStore((state) => state.demoMode);

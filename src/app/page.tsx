@@ -11,7 +11,9 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SwipeableSections } from "@/components/SwipeableSections";
 import { WelcomePage } from "@/components/WelcomePage";
+import { DemoBanner } from "@/components/DemoBanner";
 import { useAppStore } from "@/lib/store";
+import { DEMO_ARTICLES } from "@/lib/demo-data";
 import type { FeedSection } from "@/lib/types";
 
 export default function Home() {
@@ -31,6 +33,7 @@ export default function Home() {
     setError,
     setLastRefresh,
     clearCache,
+    demoMode,
   } = useAppStore();
 
   // Track mount state for hydration
@@ -163,8 +166,17 @@ export default function Home() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleRefresh]);
 
-  // Show welcome page if no API key is configured (after hydration)
-  if (mounted && !settings.nytApiKey) {
+  // Load demo data when entering demo mode
+  useEffect(() => {
+    if (demoMode && mounted) {
+      setMasterCache(DEMO_ARTICLES);
+      setFilteredArticles(DEMO_ARTICLES);
+      setLastRefresh(new Date().toISOString());
+    }
+  }, [demoMode, mounted, setMasterCache, setFilteredArticles, setLastRefresh]);
+
+  // Show welcome page if no API key is configured and not in demo mode (after hydration)
+  if (mounted && !settings.nytApiKey && !demoMode) {
     return <WelcomePage />;
   }
 
@@ -179,7 +191,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header onRefresh={handleRefresh} isRefreshing={isRefreshing} />
+      {demoMode && <DemoBanner />}
+      <Header onRefresh={demoMode ? undefined : handleRefresh} isRefreshing={isRefreshing} />
 
       {/* Desktop: Show section tabs, Mobile: Hidden (uses bottom nav) */}
       <div className="hidden md:block">

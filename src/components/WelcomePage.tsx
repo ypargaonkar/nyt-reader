@@ -10,9 +10,11 @@ import {
   Zap,
   ChevronRight,
   ExternalLink,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsDialog } from "./SettingsDialog";
+import { useAppStore } from "@/lib/store";
 
 interface WelcomePageProps {
   onGetStarted?: () => void;
@@ -20,6 +22,7 @@ interface WelcomePageProps {
 
 export function WelcomePage({ onGetStarted }: WelcomePageProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { enterDemoMode } = useAppStore();
 
   const features = [
     {
@@ -84,6 +87,14 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
+              onClick={enterDemoMode}
+              className="text-lg px-8 py-6 bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              <Play className="mr-2 h-5 w-5" />
+              Try Demo
+            </Button>
+            <Button
+              size="lg"
               onClick={() => setSettingsOpen(true)}
               className="text-lg px-8 py-6 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
             >
@@ -100,6 +111,9 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
               <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
           </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+            Try the demo with sample data - no API keys required
+          </p>
         </div>
       </div>
 
