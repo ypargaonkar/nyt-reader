@@ -30,36 +30,42 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
       title: "AI-Powered Personalization",
       description:
         "The app learns your reading preferences over time. Like articles you enjoy, and the AI builds a profile of your interests to surface relevant content.",
+      location: "Profile → AI Insights",
     },
     {
       icon: <Layers className="h-6 w-6" />,
       title: "Story Clustering",
       description:
         "Related articles are automatically grouped into story clusters, helping you follow developing news narratives across multiple sources and time periods.",
+      location: "Stories tab",
     },
     {
       icon: <TrendingUp className="h-6 w-6" />,
       title: "Smart Ranking",
       description:
         "Articles are scored based on your profile - sections you prefer, topics you follow, and journalists whose work you appreciate.",
+      location: "For You tab",
     },
     {
       icon: <Heart className="h-6 w-6" />,
       title: "Interaction Tracking",
       description:
         "Like, save, and dismiss articles. Your interactions feed into the ranking algorithm, continuously improving recommendations.",
+      location: "All article cards",
     },
     {
       icon: <BookOpen className="h-6 w-6" />,
       title: "Multiple Sections",
       description:
         "Browse by section (Politics, Tech, Business, etc.), view your personalized 'For You' feed, or explore saved articles and reading history.",
+      location: "Section tabs & Saved tab",
     },
     {
       icon: <Zap className="h-6 w-6" />,
       title: "Fast & Responsive",
       description:
         "Built with Next.js and optimized for performance. Works beautifully on desktop and mobile with gesture support.",
+      location: "Try on mobile!",
     },
   ];
 
@@ -138,8 +144,13 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
               key={index}
               className="p-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-yellow-500 dark:hover:border-yellow-500 transition-colors"
             >
-              <div className="w-12 h-12 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 flex items-center justify-center mb-4">
-                {feature.icon}
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 flex items-center justify-center">
+                  {feature.icon}
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  {feature.location}
+                </span>
               </div>
               <h3 className="font-semibold text-lg mb-2 text-gray-900 dark:text-white">
                 {feature.title}
