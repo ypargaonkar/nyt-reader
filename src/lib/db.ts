@@ -298,6 +298,25 @@ export function getLikedArticles(limit: number = 50): Article[] {
   return rows.map((row) => JSON.parse(row.data));
 }
 
+export function getLikedArticlesSince(days: number = 30, limit: number = 50): Article[] {
+  const database = getDb();
+  if (!database) return [];
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  const cutoffIso = cutoffDate.toISOString();
+
+  const stmt = database.prepare(`
+    SELECT a.data
+    FROM articles a
+    INNER JOIN interactions i ON a.uri = i.article_uri
+    WHERE i.action = 'liked' AND i.created_at >= ?
+    ORDER BY i.created_at DESC
+    LIMIT ?
+  `);
+  const rows = stmt.all(cutoffIso, limit) as { data: string }[];
+  return rows.map((row) => JSON.parse(row.data));
+}
+
 export function getUnanalyzedLikedCount(): number {
   const database = getDb();
   if (!database) return 0;

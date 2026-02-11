@@ -212,6 +212,23 @@ export async function getLikedArticlesCloud(limit: number = 50): Promise<Article
   return result.rows.map((row) => JSON.parse(row.data as string));
 }
 
+export async function getLikedArticlesSinceCloud(days: number = 30, limit: number = 50): Promise<Article[]> {
+  await ensureSchema();
+  const client = getTursoClient();
+  if (!client) return [];
+
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  const cutoffIso = cutoffDate.toISOString();
+
+  const result = await client.execute({
+    sql: `SELECT a.data FROM articles a INNER JOIN interactions i ON a.uri = i.article_uri WHERE i.action = 'liked' AND i.created_at >= ? ORDER BY i.created_at DESC LIMIT ?`,
+    args: [cutoffIso, limit],
+  });
+
+  return result.rows.map((row) => JSON.parse(row.data as string));
+}
+
 export async function getUnanalyzedLikedCountCloud(): Promise<number> {
   await ensureSchema();
   const client = getTursoClient();

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getLikedArticles,
+  getLikedArticlesSince,
   getProfileEntries,
   updateProfileScore,
   saveAiInsights,
   getLatestAiInsights,
 } from "@/lib/db";
 import {
-  getLikedArticlesCloud,
+  getLikedArticlesSinceCloud,
   getProfileEntriesCloud,
   updateProfileScoreCloud,
   saveAiInsightsCloud,
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get liked articles for analysis
+    // Get liked articles for analysis (last 30 days, up to 50 articles)
     const likedArticles = useCloud
-      ? await getLikedArticlesCloud(20)
-      : getLikedArticles(20); // Analyze last 20 liked articles
+      ? await getLikedArticlesSinceCloud(30, 50)
+      : getLikedArticlesSince(30, 50);
 
     if (likedArticles.length < 3) {
       return NextResponse.json(
