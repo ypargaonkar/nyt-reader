@@ -116,7 +116,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password to save API keys"
+                  placeholder="Get password from Yash"
                   className="w-full px-3 py-2 border rounded-md pr-10 dark:bg-gray-900 dark:border-gray-700"
                 />
                 <button
@@ -132,7 +132,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </button>
               </div>
               <p className="text-xs text-gray-500">
-                Required to protect your personalized view
+                Get the password from Yash to access the personalized view
               </p>
               {error && (
                 <p className="text-xs text-red-500 flex items-center gap-1">
