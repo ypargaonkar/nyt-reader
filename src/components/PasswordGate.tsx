@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Lock, Eye, EyeOff, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/lib/store";
 
 interface PasswordGateProps {
   children: React.ReactNode;
@@ -14,6 +15,14 @@ export function PasswordGate({ children }: PasswordGateProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const { settings, demoMode } = useAppStore();
+
+  // Track mount state
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check if already authenticated on mount
   useEffect(() => {
@@ -71,8 +80,8 @@ export function PasswordGate({ children }: PasswordGateProps) {
     }
   };
 
-  // Still checking auth status
-  if (isAuthenticated === null) {
+  // Still checking auth status or not mounted yet
+  if (isAuthenticated === null || !mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="animate-pulse text-gray-400">Loading...</div>
@@ -80,7 +89,15 @@ export function PasswordGate({ children }: PasswordGateProps) {
     );
   }
 
-  // Show login screen
+  // Allow access without password if:
+  // 1. No API key set (will show landing page)
+  // 2. In demo mode
+  const hasApiKey = !!settings.nytApiKey;
+  if (!hasApiKey || demoMode) {
+    return <>{children}</>;
+  }
+
+  // Show login screen only when user has API keys (protecting personalized view)
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 p-4">
