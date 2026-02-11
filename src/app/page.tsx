@@ -10,11 +10,13 @@ import { KeyboardShortcutsDialog } from "@/components/KeyboardShortcutsDialog";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SwipeableSections } from "@/components/SwipeableSections";
+import { WelcomePage } from "@/components/WelcomePage";
 import { useAppStore } from "@/lib/store";
 import type { FeedSection } from "@/lib/types";
 
 export default function Home() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -30,6 +32,11 @@ export default function Home() {
     setLastRefresh,
     clearCache,
   } = useAppStore();
+
+  // Track mount state for hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Apply theme mode on mount and changes
   useEffect(() => {
@@ -155,6 +162,20 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleRefresh]);
+
+  // Show welcome page if no API key is configured (after hydration)
+  if (mounted && !settings.nytApiKey) {
+    return <WelcomePage />;
+  }
+
+  // Show loading state during hydration to avoid flash
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
