@@ -11,6 +11,12 @@ import {
   ChevronRight,
   ExternalLink,
   Play,
+  UserPlus,
+  Bookmark,
+  History,
+  Moon,
+  Keyboard,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsDialog } from "./SettingsDialog";
@@ -47,25 +53,46 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
       location: "For You tab",
     },
     {
-      icon: <Heart className="h-6 w-6" />,
-      title: "Interaction Tracking",
+      icon: <UserPlus className="h-6 w-6" />,
+      title: "Follow Journalists",
       description:
-        "Like, save, and dismiss articles. Your interactions feed into the ranking algorithm, continuously improving recommendations.",
-      location: "All article cards",
+        "Follow your favorite reporters and columnists. Articles by journalists you follow get boosted in your feed.",
+      location: "Article cards → Byline",
     },
     {
-      icon: <BookOpen className="h-6 w-6" />,
-      title: "Multiple Sections",
+      icon: <Bookmark className="h-6 w-6" />,
+      title: "Save for Later",
       description:
-        "Browse by section (Politics, Tech, Business, etc.), view your personalized 'For You' feed, or explore saved articles and reading history.",
-      location: "Section tabs & Saved tab",
+        "Bookmark articles to read later. Your saved articles are always accessible in the Saved tab.",
+      location: "Saved tab",
     },
     {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Fast & Responsive",
+      icon: <History className="h-6 w-6" />,
+      title: "Reading History",
       description:
-        "Built with Next.js and optimized for performance. Works beautifully on desktop and mobile with gesture support.",
-      location: "Try on mobile!",
+        "Track articles you've read and liked. Review your reading patterns and revisit past favorites.",
+      location: "Profile → History",
+    },
+    {
+      icon: <Filter className="h-6 w-6" />,
+      title: "Smart Filters",
+      description:
+        "Filter articles by time (last 6 hours, today), reading length, or search by keyword to find exactly what you want.",
+      location: "Filter bar",
+    },
+    {
+      icon: <Keyboard className="h-6 w-6" />,
+      title: "Keyboard Shortcuts",
+      description:
+        "Navigate with j/k, open with o, like with l, save with s. Press ? to see all shortcuts for power users.",
+      location: "Press ? anywhere",
+    },
+    {
+      icon: <Moon className="h-6 w-6" />,
+      title: "Dark Mode",
+      description:
+        "Switch between light, dark, or system theme. Easy on the eyes for late-night reading sessions.",
+      location: "Header toggle",
     },
   ];
 
