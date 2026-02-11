@@ -148,7 +148,7 @@ export const useAppStore = create<AppState>()(
         sections: [],
         readingTime: "any",
         dateRange: "any",
-        quickFilter: "6h",
+        quickFilter: null,
       },
 
       // Actions
@@ -292,7 +292,7 @@ export const useAppStore = create<AppState>()(
             sections: [],
             readingTime: "any",
             dateRange: "any",
-            quickFilter: "6h",
+            quickFilter: null,
           },
         }),
 
@@ -341,7 +341,7 @@ export const useAppStore = create<AppState>()(
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Partial<AppState>;
         if (version < 2) {
-          // Migrate to v2: set 6h as default quickFilter
+          // Migrate to v2: no default quickFilter
           return {
             ...state,
             globalFilters: {
@@ -349,7 +349,7 @@ export const useAppStore = create<AppState>()(
               sections: state.globalFilters?.sections ?? [],
               readingTime: state.globalFilters?.readingTime ?? "any",
               dateRange: state.globalFilters?.dateRange ?? "any",
-              quickFilter: "6h",
+              quickFilter: null,
             },
           };
         }
