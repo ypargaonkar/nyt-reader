@@ -112,9 +112,12 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
             <span className="text-yellow-600 dark:text-yellow-500"> Reader</span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-4 leading-relaxed">
             A personalized news reading experience that learns your interests
             and surfaces the stories that matter most to you.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500 mb-8">
+            Note: A New York Times subscription is required to read full articles.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -242,10 +245,6 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
         <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-xl mx-auto">
           Set up your API keys to start reading. The NYT API is free (500 calls/day).
           OpenAI is optional for AI-powered preference analysis.
-          <br />
-          <span className="text-sm text-gray-500 dark:text-gray-500">
-            Note: A New York Times subscription is required to read full articles.
-          </span>
         </p>
         <Button
           size="lg"
