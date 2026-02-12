@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Merriweather } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthWrapper } from "@/components/AuthWrapper";
 import "./globals.css";
 
@@ -70,6 +71,7 @@ export default function RootLayout({
         className={`${inter.variable} ${merriweather.variable} font-sans antialiased`}
       >
         <AuthWrapper>{children}</AuthWrapper>
+        <Analytics />
       </body>
     </html>
   );
