@@ -9,7 +9,6 @@ import {
   Layers,
   Zap,
   ChevronRight,
-  ExternalLink,
   Play,
   UserPlus,
   Bookmark,
@@ -128,15 +127,6 @@ export function WelcomePage({ onGetStarted }: WelcomePageProps) {
             >
               <Play className="mr-2 h-5 w-5" />
               Try Demo
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => window.open("https://github.com/ypargaonkar/nyt-reader", "_blank")}
-              className="text-lg px-8 py-6"
-            >
-              View on GitHub
-              <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
