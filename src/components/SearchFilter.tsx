@@ -109,6 +109,13 @@ export function SearchFilter({
     });
   };
 
+  const toggleContentFormat = (format: "video" | "audio") => {
+    onFiltersChange({
+      ...filters,
+      contentFormat: filters.contentFormat === format ? "any" : format,
+    });
+  };
+
   const toggleSection = (section: string) => {
     const newSections = filters.sections.includes(section)
       ? filters.sections.filter((s) => s !== section)
@@ -187,15 +194,49 @@ export function SearchFilter({
           TODAY
         </Button>
 
+        {/* Separator */}
+        <div className="w-px bg-gray-200 dark:bg-gray-700 self-stretch my-1 hidden md:block" />
+
+        {/* Content format quick filters */}
+        <Button
+          variant={filters.contentFormat === "video" ? "default" : "outline"}
+          size="sm"
+          onClick={() => toggleContentFormat("video")}
+          className={cn(
+            "gap-1.5 font-medium whitespace-nowrap flex-1 md:flex-none",
+            filters.contentFormat === "video"
+              ? "bg-purple-500 hover:bg-purple-600 text-white"
+              : "hover:border-purple-300 hover:text-purple-600"
+          )}
+        >
+          <Play className="w-3.5 h-3.5" />
+          VIDEO
+        </Button>
+
+        <Button
+          variant={filters.contentFormat === "audio" ? "default" : "outline"}
+          size="sm"
+          onClick={() => toggleContentFormat("audio")}
+          className={cn(
+            "gap-1.5 font-medium whitespace-nowrap flex-1 md:flex-none",
+            filters.contentFormat === "audio"
+              ? "bg-indigo-500 hover:bg-indigo-600 text-white"
+              : "hover:border-indigo-300 hover:text-indigo-600"
+          )}
+        >
+          <Headphones className="w-3.5 h-3.5" />
+          AUDIO
+        </Button>
+
         {/* Filter button */}
         <Button
-          variant={hasActiveFilters && !filters.quickFilter ? "default" : "outline"}
+          variant={hasActiveFilters && !filters.quickFilter && filters.contentFormat === "any" ? "default" : "outline"}
           size="icon"
           onClick={() => setIsExpanded(!isExpanded)}
           className="relative flex-shrink-0"
         >
           <Filter className="w-4 h-4" />
-          {activeFilterCount > 0 && !filters.quickFilter && (
+          {activeFilterCount > 0 && !filters.quickFilter && filters.contentFormat === "any" && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
               {activeFilterCount}
             </span>
@@ -234,43 +275,6 @@ export function SearchFilter({
                     }
                   >
                     {readingTimeLabels[key]}
-                  </DropdownMenuCheckboxItem>
-                )
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Content format filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className={cn(
-                  "gap-1.5",
-                  filters.contentFormat !== "any" && "border-purple-500 text-purple-600"
-                )}
-              >
-                {contentFormatIcons[filters.contentFormat]}
-                {contentFormatLabels[filters.contentFormat]}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Content Format</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {(Object.keys(contentFormatLabels) as Array<keyof typeof contentFormatLabels>).map(
-                (key) => (
-                  <DropdownMenuCheckboxItem
-                    key={key}
-                    checked={filters.contentFormat === key}
-                    onCheckedChange={() =>
-                      onFiltersChange({ ...filters, contentFormat: key })
-                    }
-                  >
-                    <span className="flex items-center gap-2">
-                      {contentFormatIcons[key]}
-                      {contentFormatLabels[key]}
-                    </span>
                   </DropdownMenuCheckboxItem>
                 )
               )}
