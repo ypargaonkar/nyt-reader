@@ -20,6 +20,7 @@ interface Settings {
 interface GlobalFilters {
   sections: string[];
   readingTime: "any" | "quick" | "medium" | "long";
+  contentFormat: "any" | "text" | "video" | "audio";
   dateRange: "any" | "today" | "week" | "month";
   quickFilter: "new" | "6h" | "today" | null;
 }
@@ -147,6 +148,7 @@ export const useAppStore = create<AppState>()(
       globalFilters: {
         sections: [],
         readingTime: "any",
+        contentFormat: "any",
         dateRange: "any",
         quickFilter: null,
       },
@@ -291,6 +293,7 @@ export const useAppStore = create<AppState>()(
           globalFilters: {
             sections: [],
             readingTime: "any",
+            contentFormat: "any",
             dateRange: "any",
             quickFilter: null,
           },
@@ -337,7 +340,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: "nyt-reader-storage",
-      version: 2,
+      version: 3,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Partial<AppState>;
         if (version < 2) {
@@ -348,8 +351,19 @@ export const useAppStore = create<AppState>()(
               ...state.globalFilters,
               sections: state.globalFilters?.sections ?? [],
               readingTime: state.globalFilters?.readingTime ?? "any",
+              contentFormat: "any" as const,
               dateRange: state.globalFilters?.dateRange ?? "any",
               quickFilter: null,
+            },
+          };
+        }
+        if (version < 3) {
+          // Migrate to v3: add contentFormat filter
+          return {
+            ...state,
+            globalFilters: {
+              ...state.globalFilters,
+              contentFormat: "any" as const,
             },
           };
         }

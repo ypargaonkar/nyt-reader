@@ -30,6 +30,7 @@ export default function HistoryPage() {
     searchQuery,
     sections: globalFilters.sections,
     readingTime: globalFilters.readingTime,
+    contentFormat: globalFilters.contentFormat,
     dateRange: globalFilters.dateRange,
     quickFilter: globalFilters.quickFilter,
   };

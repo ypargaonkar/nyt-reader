@@ -85,6 +85,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     searchQuery,
     sections: globalFilters.sections,
     readingTime: globalFilters.readingTime,
+    contentFormat: globalFilters.contentFormat,
     dateRange: globalFilters.dateRange,
     quickFilter: globalFilters.quickFilter,
   };
@@ -915,7 +916,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     const filteredHistory = applyFilters(historyArticles, filters);
     const historySections = [...new Set(historyArticles.map((a) => a.section))].sort();
     const hasHistoryFilters = filters.searchQuery || filters.sections.length > 0 ||
-      filters.readingTime !== "any" || filters.dateRange !== "any" || filters.quickFilter;
+      filters.readingTime !== "any" || filters.contentFormat !== "any" || filters.dateRange !== "any" || filters.quickFilter;
 
     if (historyLoading) {
       return <FeedSkeleton />;

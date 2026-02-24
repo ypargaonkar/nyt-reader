@@ -9,6 +9,9 @@ import {
   Calendar,
   Zap,
   Sun,
+  Play,
+  Headphones,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +29,7 @@ export interface FilterOptions {
   searchQuery: string;
   sections: string[];
   readingTime: "any" | "quick" | "medium" | "long";
+  contentFormat: "any" | "text" | "video" | "audio";
   dateRange: "any" | "today" | "week" | "month";
   quickFilter?: "new" | "6h" | "today" | null;
 }
@@ -41,6 +45,20 @@ const readingTimeLabels = {
   quick: "Quick read (<5 min)",
   medium: "Medium (5-15 min)",
   long: "Long read (15+ min)",
+};
+
+const contentFormatLabels = {
+  any: "All formats",
+  text: "Text",
+  video: "Video",
+  audio: "Audio / Podcast",
+};
+
+const contentFormatIcons: Record<string, React.ReactNode> = {
+  any: <FileText className="w-3.5 h-3.5" />,
+  text: <FileText className="w-3.5 h-3.5" />,
+  video: <Play className="w-3.5 h-3.5" />,
+  audio: <Headphones className="w-3.5 h-3.5" />,
 };
 
 const dateRangeLabels = {
@@ -61,6 +79,7 @@ export function SearchFilter({
     filters.searchQuery ||
     filters.sections.length > 0 ||
     filters.readingTime !== "any" ||
+    filters.contentFormat !== "any" ||
     filters.dateRange !== "any" ||
     filters.quickFilter;
 
@@ -68,6 +87,7 @@ export function SearchFilter({
     (filters.searchQuery ? 1 : 0) +
     filters.sections.length +
     (filters.readingTime !== "any" ? 1 : 0) +
+    (filters.contentFormat !== "any" ? 1 : 0) +
     (filters.dateRange !== "any" ? 1 : 0) +
     (filters.quickFilter ? 1 : 0);
 
@@ -76,6 +96,7 @@ export function SearchFilter({
       searchQuery: "",
       sections: [],
       readingTime: "any",
+      contentFormat: "any",
       dateRange: "any",
       quickFilter: null,
     });
@@ -219,6 +240,43 @@ export function SearchFilter({
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Content format filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "gap-1.5",
+                  filters.contentFormat !== "any" && "border-purple-500 text-purple-600"
+                )}
+              >
+                {contentFormatIcons[filters.contentFormat]}
+                {contentFormatLabels[filters.contentFormat]}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Content Format</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(Object.keys(contentFormatLabels) as Array<keyof typeof contentFormatLabels>).map(
+                (key) => (
+                  <DropdownMenuCheckboxItem
+                    key={key}
+                    checked={filters.contentFormat === key}
+                    onCheckedChange={() =>
+                      onFiltersChange({ ...filters, contentFormat: key })
+                    }
+                  >
+                    <span className="flex items-center gap-2">
+                      {contentFormatIcons[key]}
+                      {contentFormatLabels[key]}
+                    </span>
+                  </DropdownMenuCheckboxItem>
+                )
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Date range filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -327,6 +385,18 @@ export function SearchFilter({
               />
             </Badge>
           )}
+          {filters.contentFormat !== "any" && (
+            <Badge variant="secondary" className="gap-1">
+              {contentFormatIcons[filters.contentFormat]}
+              {contentFormatLabels[filters.contentFormat]}
+              <X
+                className="w-3 h-3 cursor-pointer"
+                onClick={() =>
+                  onFiltersChange({ ...filters, contentFormat: "any" })
+                }
+              />
+            </Badge>
+          )}
           {filters.dateRange !== "any" && (
             <Badge variant="secondary" className="gap-1">
               {dateRangeLabels[filters.dateRange]}
@@ -362,7 +432,7 @@ function isTodayArticle(publishedDate: string): boolean {
 }
 
 // Filter function to apply filters to articles
-export function applyFilters<T extends { title: string; abstract: string; section: string; keywords: string[]; publishedDate: string; wordCount: number }>(
+export function applyFilters<T extends { title: string; abstract: string; section: string; keywords: string[]; publishedDate: string; wordCount: number; contentType?: string }>(
   articles: T[],
   filters: FilterOptions
 ): T[] {
@@ -411,6 +481,14 @@ export function applyFilters<T extends { title: string; abstract: string; sectio
     if (filters.readingTime === "quick" && readTime >= 5) return false;
     if (filters.readingTime === "medium" && (readTime < 5 || readTime > 15)) return false;
     if (filters.readingTime === "long" && readTime <= 15) return false;
+
+    // Content format
+    if (filters.contentFormat && filters.contentFormat !== "any") {
+      const ct = article.contentType || "text";
+      if (filters.contentFormat === "text" && ct !== "text") return false;
+      if (filters.contentFormat === "video" && ct !== "video") return false;
+      if (filters.contentFormat === "audio" && ct !== "audio" && ct !== "audio-transcript") return false;
+    }
 
     // Date range
     const publishedDate = new Date(article.publishedDate);
