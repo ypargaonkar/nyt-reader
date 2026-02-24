@@ -98,6 +98,7 @@ export function Feed({ onOpenSettings }: FeedProps) {
     setGlobalFilters({
       sections: newFilters.sections,
       readingTime: newFilters.readingTime,
+      contentFormat: newFilters.contentFormat,
       dateRange: newFilters.dateRange,
       quickFilter: newFilters.quickFilter,
     });
