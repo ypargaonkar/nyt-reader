@@ -14,6 +14,9 @@ import {
   TrendingUp,
   Zap,
   ExternalLink,
+  Play,
+  Headphones,
+  FileText,
 } from "lucide-react";
 import { NYTLogo } from "@/components/NYTLogo";
 import { Badge } from "@/components/ui/badge";
@@ -372,6 +375,42 @@ function JournalistChip({
   );
 }
 
+// Content type badge (video, audio, audio+transcript)
+function ContentTypeBadge({ article, variant = "default" }: { article: Article; variant?: "default" | "light" }) {
+  if (article.contentType === "text") return null;
+
+  const styles = {
+    video: variant === "light"
+      ? "bg-purple-500/20 backdrop-blur-sm text-purple-200 border border-purple-400/30"
+      : "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300",
+    audio: variant === "light"
+      ? "bg-indigo-500/20 backdrop-blur-sm text-indigo-200 border border-indigo-400/30"
+      : "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300",
+    "audio-transcript": variant === "light"
+      ? "bg-indigo-500/20 backdrop-blur-sm text-indigo-200 border border-indigo-400/30"
+      : "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300",
+  };
+
+  const labels: Record<string, { icon: React.ReactNode; text: string }> = {
+    video: { icon: <Play className="w-3 h-3" />, text: "Video" },
+    audio: { icon: <Headphones className="w-3 h-3" />, text: "Audio" },
+    "audio-transcript": {
+      icon: <><Headphones className="w-3 h-3" /><FileText className="w-3 h-3" /></>,
+      text: "Audio + Transcript",
+    },
+  };
+
+  const config = labels[article.contentType];
+  if (!config) return null;
+
+  return (
+    <span className={cn("inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded", styles[article.contentType])}>
+      {config.icon}
+      {config.text}
+    </span>
+  );
+}
+
 // Action buttons with beautiful hover states
 function ActionButtons({
   article,
@@ -528,6 +567,7 @@ function HeroArticle({
             <Badge className={cn("uppercase text-xs font-bold backdrop-blur-sm", sectionColor.accent, "text-white")}>
               {article.section}
             </Badge>
+            <ContentTypeBadge article={article} variant="light" />
           </div>
           {showRelevanceScore && article.relevanceScore && (
             <Badge className="bg-white/10 backdrop-blur-md text-white border border-white/20 text-xs gap-1.5">
@@ -661,9 +701,12 @@ function FeaturedCard({
 
       {/* Content */}
       <div className="p-5">
-        <Badge variant="outline" className={cn("text-xs uppercase mb-3 font-semibold", sectionColor.text)}>
-          {article.section}
-        </Badge>
+        <div className="flex items-center gap-2 mb-3">
+          <Badge variant="outline" className={cn("text-xs uppercase font-semibold", sectionColor.text)}>
+            {article.section}
+          </Badge>
+          <ContentTypeBadge article={article} />
+        </div>
 
         <h2 className="text-lg font-serif font-bold leading-tight mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
           {article.title}
@@ -772,8 +815,11 @@ function MiniCard({
 
       {/* Content */}
       <div className="p-4">
-        <div className={cn("text-xs font-semibold uppercase mb-2", sectionColor.text)}>
-          {article.section}
+        <div className="flex items-center gap-2 mb-2">
+          <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
+            {article.section}
+          </span>
+          <ContentTypeBadge article={article} />
         </div>
 
         <h3 className="font-serif font-bold text-base leading-snug mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
@@ -877,9 +923,12 @@ function ScrollCard({
       )}
 
       <div className="p-4">
-        <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
-          {article.section}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
+            {article.section}
+          </span>
+          <ContentTypeBadge article={article} />
+        </div>
         <h4 className="font-serif font-bold text-sm leading-tight mt-1 mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {article.title}
         </h4>

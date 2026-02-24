@@ -69,6 +69,9 @@ export interface NYTArticle {
   short_url?: string;
 }
 
+// Content format type for articles
+export type ContentType = "text" | "video" | "audio" | "audio-transcript";
+
 // Normalized article for our app
 export interface Article {
   uri: string;
@@ -91,6 +94,7 @@ export interface Article {
   hasMultimedia: boolean;
   isInteractive: boolean;
   isLiveBlog: boolean;
+  contentType: ContentType;
   desk: string;
   source: string;
   relevanceScore?: number;

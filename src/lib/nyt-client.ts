@@ -1,4 +1,4 @@
-import type { NYTArticle, Article, FeedSection } from "./types";
+import type { NYTArticle, Article, FeedSection, ContentType } from "./types";
 
 const NYT_API_BASE = "https://api.nytimes.com/svc";
 
@@ -256,6 +256,44 @@ export function isOldLiveBlog(article: Article): boolean {
   return articleTime < twelveHoursAgo;
 }
 
+/**
+ * Ensure an Article has a contentType field.
+ * Used to backfill cached articles that were stored before this field existed.
+ */
+export function ensureContentType(article: Article): Article {
+  if (article.contentType) return article;
+
+  const lowerUrl = (article.url || "").toLowerCase();
+  const lowerSection = (article.section || "").toLowerCase();
+  const lowerMaterial = (article.materialType || "").toLowerCase();
+  const lowerTitle = (article.title || "").toLowerCase();
+  const lowerKeywords = (article.keywords || []).map((k) => k.toLowerCase());
+
+  let contentType: ContentType = "text";
+
+  if (
+    lowerUrl.includes("/video/") ||
+    lowerUrl.includes("/videos/") ||
+    lowerMaterial.includes("video") ||
+    lowerSection === "video"
+  ) {
+    contentType = "video";
+  } else if (
+    lowerUrl.includes("/podcasts/") ||
+    lowerUrl.includes("/podcast/") ||
+    lowerSection === "podcasts" ||
+    lowerSection === "podcast" ||
+    lowerMaterial.includes("podcast") ||
+    lowerMaterial.includes("audio") ||
+    lowerKeywords.some((k) => k.includes("podcast")) ||
+    lowerTitle.includes("podcast")
+  ) {
+    contentType = (article.wordCount && article.wordCount > 500) ? "audio-transcript" : "audio";
+  }
+
+  return { ...article, contentType };
+}
+
 // Normalize NYT API response to our Article format
 export function normalizeArticle(raw: NYTArticle): Article {
   // Extract byline
@@ -401,6 +439,42 @@ export function normalizeArticle(raw: NYTArticle): Article {
     lowerMaterial.includes("live") ||
     raw.item_type?.toLowerCase() === "liveblog";
 
+  // Detect content type (video, audio/podcast, or text)
+  const articleUrl = raw.url || raw.web_url || "";
+  const lowerUrl = articleUrl.toLowerCase();
+  const lowerSection = (raw.section || raw.section_name || "").toLowerCase();
+  const lowerItemType = (raw.item_type || raw.type || "").toLowerCase();
+  const lowerKeywords = keywords.map((k) => k.toLowerCase());
+
+  let contentType: ContentType = "text";
+
+  // Detect video
+  if (
+    lowerUrl.includes("/video/") ||
+    lowerUrl.includes("/videos/") ||
+    lowerItemType === "video" ||
+    lowerMaterial.includes("video") ||
+    lowerSection === "video" ||
+    raw.document_type === "video"
+  ) {
+    contentType = "video";
+  }
+  // Detect audio/podcast
+  else if (
+    lowerUrl.includes("/podcasts/") ||
+    lowerUrl.includes("/podcast/") ||
+    lowerSection === "podcasts" ||
+    lowerSection === "podcast" ||
+    lowerMaterial.includes("podcast") ||
+    lowerMaterial.includes("audio") ||
+    lowerItemType === "audio" ||
+    lowerKeywords.some((k) => k.includes("podcast")) ||
+    normalizedTitle.includes("podcast")
+  ) {
+    // If it has substantial word count, it likely includes a transcript
+    contentType = (raw.word_count && raw.word_count > 500) ? "audio-transcript" : "audio";
+  }
+
   const publishedDate =
     raw.published_date || raw.pub_date || new Date().toISOString();
   const updatedDate =
@@ -430,6 +504,7 @@ export function normalizeArticle(raw: NYTArticle): Article {
     ),
     isInteractive,
     isLiveBlog,
+    contentType,
     desk: raw.desk || raw.news_desk || "",
     source: raw.source || "The New York Times",
   };

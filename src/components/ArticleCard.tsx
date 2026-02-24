@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDistanceToNow, format, isToday, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
-import { Heart, Check, Clock, UserPlus, UserCheck, Bookmark, Copy, Square, CheckSquare, Calendar, RefreshCw, X } from "lucide-react";
+import { Heart, Check, Clock, UserPlus, UserCheck, Bookmark, Copy, Square, CheckSquare, Calendar, RefreshCw, X, Play, Headphones, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -248,6 +248,25 @@ export function ArticleCard({
               <span className={cn("text-xs font-semibold uppercase", sectionColor.text)}>
                 {article.section}
               </span>
+              {article.contentType === "video" && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                  <Play className="w-3 h-3" />
+                  Video
+                </span>
+              )}
+              {article.contentType === "audio" && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                  <Headphones className="w-3 h-3" />
+                  Audio
+                </span>
+              )}
+              {article.contentType === "audio-transcript" && (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                  <Headphones className="w-3 h-3" />
+                  <FileText className="w-3 h-3" />
+                  Audio + Transcript
+                </span>
+              )}
               {showRelevanceScore && article.relevanceScore && article.relevanceScore >= 60 && (
                 <span
                   className="ml-auto text-xs text-gray-500 dark:text-gray-400"

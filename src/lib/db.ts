@@ -2,6 +2,7 @@ import Database, { Database as DatabaseType } from "better-sqlite3";
 import path from "path";
 import fs from "fs";
 import type { Article, Interaction, ProfileEntry, InteractionType } from "./types";
+import { ensureContentType } from "./nyt-client";
 
 // Check if we're in a serverless environment (Vercel)
 const IS_SERVERLESS = process.env.VERCEL === "1" || process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -167,7 +168,7 @@ export function getCachedArticle(uri: string): Article | null {
   if (!database) return null;
   const stmt = database.prepare("SELECT data FROM articles WHERE uri = ?");
   const row = stmt.get(uri) as { data: string } | undefined;
-  return row ? JSON.parse(row.data) : null;
+  return row ? ensureContentType(JSON.parse(row.data)) : null;
 }
 
 export function getCachedArticles(limit: number = 100): Article[] {
@@ -179,7 +180,7 @@ export function getCachedArticles(limit: number = 100): Article[] {
     LIMIT ?
   `);
   const rows = stmt.all(limit) as { data: string }[];
-  return rows.map((row) => JSON.parse(row.data));
+  return rows.map((row) => ensureContentType(JSON.parse(row.data)));
 }
 
 // Interaction operations
@@ -261,7 +262,7 @@ export function getSavedArticles(limit: number = 100): Article[] {
     LIMIT ?
   `);
   const rows = stmt.all(limit) as { data: string }[];
-  return rows.map((row) => JSON.parse(row.data));
+  return rows.map((row) => ensureContentType(JSON.parse(row.data)));
 }
 
 export function isArticleSaved(uri: string): boolean {
@@ -295,7 +296,7 @@ export function getLikedArticles(limit: number = 50): Article[] {
     LIMIT ?
   `);
   const rows = stmt.all(limit) as { data: string }[];
-  return rows.map((row) => JSON.parse(row.data));
+  return rows.map((row) => ensureContentType(JSON.parse(row.data)));
 }
 
 export function getLikedArticlesSince(days: number = 30, limit: number = 50): Article[] {
@@ -314,7 +315,7 @@ export function getLikedArticlesSince(days: number = 30, limit: number = 50): Ar
     LIMIT ?
   `);
   const rows = stmt.all(cutoffIso, limit) as { data: string }[];
-  return rows.map((row) => JSON.parse(row.data));
+  return rows.map((row) => ensureContentType(JSON.parse(row.data)));
 }
 
 export function getUnanalyzedLikedCount(): number {
@@ -575,7 +576,7 @@ export function getArticlesWithoutEmbeddings(limit: number = 50): Article[] {
     LIMIT ?
   `);
   const rows = stmt.all(limit) as { data: string }[];
-  return rows.map((row) => JSON.parse(row.data));
+  return rows.map((row) => ensureContentType(JSON.parse(row.data)));
 }
 
 // Cluster operations

@@ -9,6 +9,9 @@ import {
   ExternalLink,
   Compass,
   Sparkles,
+  Play,
+  Headphones,
+  FileText,
 } from "lucide-react";
 import { NYTLogo } from "@/components/NYTLogo";
 import { Button } from "@/components/ui/button";
@@ -164,9 +167,30 @@ export function DiscoverFeed({
                   </span>
                 </div>
               )}
-              <Badge className="absolute top-3 left-3 bg-amber-600 hover:bg-amber-700">
-                {currentArticle.section}
-              </Badge>
+              <div className="absolute top-3 left-3 flex items-center gap-2">
+                <Badge className="bg-amber-600 hover:bg-amber-700">
+                  {currentArticle.section}
+                </Badge>
+                {currentArticle.contentType === "video" && (
+                  <Badge className="bg-purple-600/80 backdrop-blur-sm text-white">
+                    <Play className="w-3 h-3 mr-1" />
+                    Video
+                  </Badge>
+                )}
+                {currentArticle.contentType === "audio" && (
+                  <Badge className="bg-indigo-600/80 backdrop-blur-sm text-white">
+                    <Headphones className="w-3 h-3 mr-1" />
+                    Audio
+                  </Badge>
+                )}
+                {currentArticle.contentType === "audio-transcript" && (
+                  <Badge className="bg-indigo-600/80 backdrop-blur-sm text-white">
+                    <Headphones className="w-3 h-3 mr-1" />
+                    <FileText className="w-3 h-3 mr-1" />
+                    Audio + Transcript
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {/* Content */}

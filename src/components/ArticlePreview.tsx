@@ -12,6 +12,9 @@ import {
   Copy,
   Mail,
   Link2,
+  Play,
+  Headphones,
+  FileText,
 } from "lucide-react";
 import {
   Dialog,
@@ -139,6 +142,25 @@ export function ArticlePreview({
             <Badge variant="outline" className="uppercase text-xs">
               {article.section}
             </Badge>
+            {article.contentType === "video" && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
+                <Play className="w-3 h-3" />
+                Video
+              </span>
+            )}
+            {article.contentType === "audio" && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                <Headphones className="w-3 h-3" />
+                Audio
+              </span>
+            )}
+            {article.contentType === "audio-transcript" && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300">
+                <Headphones className="w-3 h-3" />
+                <FileText className="w-3 h-3" />
+                Audio + Transcript
+              </span>
+            )}
             {article.subsection && (
               <Badge variant="secondary" className="text-xs">
                 {article.subsection}

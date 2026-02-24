@@ -35,6 +35,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Detect content type from NYT API data
+    function detectContentType(a: any): "text" | "video" | "audio" | "audio-transcript" {
+      const url = (a.url || "").toLowerCase();
+      const section = (a.section || "").toLowerCase();
+      const itemType = (a.item_type || "").toLowerCase();
+      const title = (a.title || "").toLowerCase();
+      if (url.includes("/video/") || url.includes("/videos/") || itemType === "video") return "video";
+      if (url.includes("/podcasts/") || url.includes("/podcast/") || section === "podcasts" || title.includes("podcast")) {
+        return (a.word_count && a.word_count > 500) ? "audio-transcript" : "audio";
+      }
+      return "text";
+    }
+
     // Transform to our Article format
     const articles = allArticles.map((article: any) => ({
       uri: article.uri || `nyt://article/${Date.now()}-${Math.random()}`,
@@ -57,6 +70,7 @@ export async function GET(request: NextRequest) {
       hasMultimedia: !!(article.multimedia && article.multimedia.length > 0),
       isInteractive: false,
       isLiveBlog: false,
+      contentType: detectContentType(article),
       desk: article.section || "",
       source: "The New York Times",
       relevanceScore: Math.floor(Math.random() * 30) + 70, // Random score 70-100

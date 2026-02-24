@@ -1,5 +1,6 @@
 import { getTursoClient, initTursoSchema, isTursoConfigured } from "./turso";
 import type { Article, Interaction, ProfileEntry, InteractionType } from "./types";
+import { ensureContentType } from "./nyt-client";
 
 // Track if schema has been initialized
 let schemaInitialized = false;
@@ -47,7 +48,7 @@ export async function getCachedArticleCloud(uri: string): Promise<Article | null
   });
 
   if (result.rows.length === 0) return null;
-  return JSON.parse(result.rows[0].data as string);
+  return ensureContentType(JSON.parse(result.rows[0].data as string));
 }
 
 export async function getCachedArticlesCloud(limit: number = 100): Promise<Article[]> {
@@ -60,7 +61,7 @@ export async function getCachedArticlesCloud(limit: number = 100): Promise<Artic
     args: [limit],
   });
 
-  return result.rows.map((row) => JSON.parse(row.data as string));
+  return result.rows.map((row) => ensureContentType(JSON.parse(row.data as string)));
 }
 
 export async function getLastFetchTimeCloud(): Promise<number | null> {
@@ -172,7 +173,7 @@ export async function getSavedArticlesCloud(limit: number = 100): Promise<Articl
     args: [limit],
   });
 
-  return result.rows.map((row) => JSON.parse(row.data as string));
+  return result.rows.map((row) => ensureContentType(JSON.parse(row.data as string)));
 }
 
 export async function unsaveArticleCloud(uri: string): Promise<void> {
@@ -209,7 +210,7 @@ export async function getLikedArticlesCloud(limit: number = 50): Promise<Article
     args: [limit],
   });
 
-  return result.rows.map((row) => JSON.parse(row.data as string));
+  return result.rows.map((row) => ensureContentType(JSON.parse(row.data as string)));
 }
 
 export async function getLikedArticlesSinceCloud(days: number = 30, limit: number = 50): Promise<Article[]> {
@@ -226,7 +227,7 @@ export async function getLikedArticlesSinceCloud(days: number = 30, limit: numbe
     args: [cutoffIso, limit],
   });
 
-  return result.rows.map((row) => JSON.parse(row.data as string));
+  return result.rows.map((row) => ensureContentType(JSON.parse(row.data as string)));
 }
 
 export async function getUnanalyzedLikedCountCloud(): Promise<number> {
@@ -469,7 +470,7 @@ export async function getArticlesWithoutEmbeddingsCloud(limit: number = 50): Pro
     args: [limit],
   });
 
-  return result.rows.map((row) => JSON.parse(row.data as string));
+  return result.rows.map((row) => ensureContentType(JSON.parse(row.data as string)));
 }
 
 // Clusters
