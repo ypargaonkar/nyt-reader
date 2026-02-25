@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Settings, User, Moon, Sun, RefreshCw, Newspaper, Monitor } from "lucide-react";
+import { Settings, User, Moon, Sun, RefreshCw, Newspaper, Monitor, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -76,6 +76,18 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                   <RefreshCw className={cn("h-5 w-5", isRefreshing && "animate-spin")} />
                 </Button>
               )}
+
+              {/* Games link */}
+              <Link href="/games">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 touch-manipulation"
+                  title="Games"
+                >
+                  <Gamepad2 className="h-5 w-5" />
+                </Button>
+              </Link>
 
               {/* Theme mode toggle */}
               <Button
