@@ -132,6 +132,41 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
     setInput(["", "", "", ""]);
   };
 
+  // Find the index of the newly added letter (multiset diff) between two words.
+  // Returns -1 if no single letter change is found (e.g., start word or anagram).
+  const getNewLetterIndex = (prev: string, current: string): number => {
+    const prevCounts = new Map<string, number>();
+    for (const ch of prev) {
+      prevCounts.set(ch, (prevCounts.get(ch) || 0) + 1);
+    }
+    const currentCounts = new Map<string, number>();
+    for (const ch of current) {
+      currentCounts.set(ch, (currentCounts.get(ch) || 0) + 1);
+    }
+
+    // Find which letter was added (has higher count in current than prev)
+    let addedLetter = "";
+    const allLetters = new Set([...prevCounts.keys(), ...currentCounts.keys()]);
+    for (const ch of allLetters) {
+      if ((currentCounts.get(ch) || 0) > (prevCounts.get(ch) || 0)) {
+        addedLetter = ch;
+        break;
+      }
+    }
+    if (!addedLetter) return -1;
+
+    // Find the "extra" occurrence: the (prevCount+1)th instance in current word
+    const prevCount = prevCounts.get(addedLetter) || 0;
+    let occurrences = 0;
+    for (let idx = 0; idx < current.length; idx++) {
+      if (current[idx] === addedLetter) {
+        occurrences++;
+        if (occurrences > prevCount) return idx;
+      }
+    }
+    return -1;
+  };
+
   if (!currentPuzzle) return null;
 
   const steps = chain.length - 1;
@@ -170,11 +205,9 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
                 )}
               />
               <div className="flex gap-1">
-                {word.split("").map((letter, j) => {
-                  const prevWord = i > 0 ? chain[i - 1] : null;
-                  const isChanged = prevWord ? prevWord[j] !== letter : false;
-
-                  return (
+                {(() => {
+                  const changedIdx = i > 0 ? getNewLetterIndex(chain[i - 1], word) : -1;
+                  return word.split("").map((letter, j) => (
                     <div
                       key={j}
                       className={cn(
@@ -184,13 +217,13 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
                           : isStart
                           ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700"
                           : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700",
-                        isChanged && !isTarget && "ring-2 ring-purple-400 dark:ring-purple-500"
+                        j === changedIdx && !isTarget && "ring-2 ring-purple-400 dark:ring-purple-500"
                       )}
                     >
                       {letter}
                     </div>
-                  );
-                })}
+                  ));
+                })()}
               </div>
               <span className="text-xs text-gray-400 w-12 shrink-0">
                 {isStart ? "START" : isTarget ? "DONE!" : `#${i}`}
