@@ -37,18 +37,17 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
   } = useMorphStore();
 
   const [input, setInput] = useState(["", "", "", ""]);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const lastWord = chain[chain.length - 1];
 
-  // Pre-fill input from the last word whenever the chain changes
+  // Focus first empty input after each move
   useEffect(() => {
-    if (gameStatus === "playing" && lastWord) {
-      setInput(lastWord.split(""));
-      setActiveIndex(null);
+    if (gameStatus === "playing") {
+      setInput(["", "", "", ""]);
+      setTimeout(() => inputRefs.current[0]?.focus(), 0);
     }
   }, [chain.length, gameStatus]);
 
@@ -63,13 +62,8 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
     if (!currentPuzzle || gameStatus !== "playing") return;
 
     const word = input.join("").toLowerCase();
-    if (word.length !== 4 || input.some((l) => !l)) {
-      triggerShake("Fill in all 4 letters");
-      return;
-    }
-
-    if (word === lastWord) {
-      triggerShake("Change one letter");
+    if (word.length !== 4) {
+      triggerShake("Enter a 4-letter word");
       return;
     }
 
@@ -80,8 +74,8 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
     }
 
     addWord(word);
+    setInput(["", "", "", ""]);
     setError(null);
-    setActiveIndex(null);
 
     // Check win
     if (word === currentPuzzle.target) {
@@ -90,73 +84,30 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
     }
   }, [input, lastWord, currentPuzzle, gameStatus, dictionary, addWord, winGame, onWin]);
 
-  const handleLetterClick = (index: number) => {
-    if (gameStatus !== "playing") return;
-    setActiveIndex(index);
-    // Clear the letter at this position to indicate editing
-    const newInput = lastWord.split("");
-    newInput[index] = "";
-    setInput(newInput);
-    setTimeout(() => inputRefs.current[index]?.focus(), 0);
-  };
-
   const handleInputChange = (index: number, value: string) => {
     if (gameStatus !== "playing") return;
     const letter = value.slice(-1).toLowerCase();
     if (letter && !/^[a-z]$/.test(letter)) return;
 
     const newInput = [...input];
-    newInput[index] = letter || "";
+    newInput[index] = letter;
     setInput(newInput);
 
-    // Auto-submit if a letter was typed and all positions are filled
-    if (letter) {
-      const candidate = newInput.join("").toLowerCase();
-      if (candidate.length === 4 && newInput.every((l) => l)) {
-        // Small delay so the user sees the letter appear
-        setTimeout(() => {
-          if (candidate === lastWord) {
-            triggerShake("Change one letter");
-            return;
-          }
-          const result = isValidMove(lastWord, candidate, dictionary);
-          if (!result.valid) {
-            triggerShake(result.reason || "Invalid move");
-            return;
-          }
-          addWord(candidate);
-          setError(null);
-          setActiveIndex(null);
-          if (currentPuzzle && candidate === currentPuzzle.target) {
-            winGame();
-            onWin();
-          }
-        }, 100);
-      }
+    // Auto-advance to next input
+    if (letter && index < 3) {
+      inputRefs.current[index + 1]?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace") {
-      // Reset this position to the original letter
+    if (e.key === "Backspace" && !input[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
       const newInput = [...input];
-      newInput[index] = "";
+      newInput[index - 1] = "";
       setInput(newInput);
-    }
-    if (e.key === "Escape") {
-      // Cancel editing, restore from lastWord
-      setInput(lastWord.split(""));
-      setActiveIndex(null);
-      inputRefs.current[index]?.blur();
     }
     if (e.key === "Enter") {
       handleSubmit();
-    }
-    if (e.key === "ArrowLeft" && index > 0) {
-      handleLetterClick(index - 1);
-    }
-    if (e.key === "ArrowRight" && index < 3) {
-      handleLetterClick(index + 1);
     }
   };
 
@@ -166,7 +117,7 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
     if (path && path.length > 1) {
       const nextWord = path[1];
       useHintWord(nextWord);
-      setActiveIndex(null);
+      setInput(["", "", "", ""]);
 
       if (nextWord === currentPuzzle.target) {
         winGame();
@@ -178,7 +129,7 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
   const handleUndo = () => {
     if (chain.length <= 1 || gameStatus !== "playing") return;
     undoLastWord();
-    setActiveIndex(null);
+    setInput(["", "", "", ""]);
   };
 
   if (!currentPuzzle) return null;
@@ -248,65 +199,35 @@ export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardPr
           );
         })}
 
-        {/* Active input row — pre-filled from last word, tap any letter to change it */}
+        {/* Active input row */}
         {gameStatus === "playing" && (
           <div className="flex items-center gap-2 w-full justify-center">
             <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 shrink-0" />
             <div className={cn("flex gap-1", shaking && "animate-shake")}>
-              {input.map((letter, i) => {
-                const isEditing = activeIndex === i;
-                const isUnchanged = letter === lastWord[i];
-                return isEditing ? (
-                  <input
-                    key={i}
-                    ref={(el) => { inputRefs.current[i] = el; }}
-                    type="text"
-                    inputMode="text"
-                    autoCapitalize="none"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    value={letter}
-                    onChange={(e) => handleInputChange(i, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(i, e)}
-                    onBlur={() => {
-                      // Restore original letter if left empty
-                      if (!input[i]) {
-                        const restored = [...input];
-                        restored[i] = lastWord[i];
-                        setInput(restored);
-                      }
-                      setActiveIndex(null);
-                    }}
-                    className={cn(
-                      "w-10 h-10 text-center rounded-md font-mono text-lg font-bold uppercase",
-                      "bg-white dark:bg-gray-900 border-2 border-blue-500 dark:border-blue-400",
-                      "focus:outline-none ring-2 ring-blue-300 dark:ring-blue-600",
-                      "transition-colors"
-                    )}
-                    maxLength={1}
-                  />
-                ) : (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleLetterClick(i)}
-                    className={cn(
-                      "w-10 h-10 flex items-center justify-center rounded-md font-mono text-lg font-bold uppercase",
-                      "transition-all cursor-pointer",
-                      isUnchanged
-                        ? "bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:border-blue-400 dark:hover:border-blue-500"
-                        : "bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-400 dark:border-purple-500 text-purple-700 dark:text-purple-300"
-                    )}
-                  >
-                    {letter}
-                  </button>
-                );
-              })}
+              {input.map((letter, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="text"
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={letter}
+                  onChange={(e) => handleInputChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  className={cn(
+                    "w-10 h-10 text-center rounded-md font-mono text-lg font-bold uppercase",
+                    "bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600",
+                    "focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none",
+                    "transition-colors"
+                  )}
+                  maxLength={1}
+                />
+              ))}
             </div>
-            <span className="text-xs text-gray-400 w-12 shrink-0">
-              {activeIndex !== null ? "TAP" : ""}
-            </span>
+            <span className="text-xs text-gray-400 w-12 shrink-0" />
           </div>
         )}
 
