@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useMorphStore } from "@/lib/games/morph-store";
 import { getDictionary, getGraph } from "@/lib/games/morph-dictionary";
 import { getTodaysPuzzle, getPuzzleNumber } from "@/lib/games/morph-puzzles";
-import type { WordGraph } from "@/lib/games/morph-engine";
+import { generateRandomPuzzle, type WordGraph } from "@/lib/games/morph-engine";
+import { loadWords } from "@/lib/games/morph-dictionary";
 import { MorphBoard } from "./MorphBoard";
 import { MorphHowToPlay } from "./MorphHowToPlay";
 import { MorphStats } from "./MorphStats";
@@ -22,7 +23,7 @@ export function MorphGame() {
   const [showStats, setShowStats] = useState(false);
   const [showWinState, setShowWinState] = useState(false);
 
-  const { currentPuzzle, gameStatus, startGame, stats } = useMorphStore();
+  const { currentPuzzle, gameStatus, startGame, shufflePuzzle, stats } = useMorphStore();
 
   // Load dictionary, graph, and puzzle on mount
   useEffect(() => {
@@ -66,6 +67,16 @@ export function MorphGame() {
     setShowWinState(true);
     // Small delay then show stats
     setTimeout(() => setShowStats(true), 800);
+  };
+
+  const handleShuffle = async () => {
+    if (!graph) return;
+    const words = await loadWords();
+    const puzzle = generateRandomPuzzle(words, graph);
+    if (puzzle) {
+      shufflePuzzle(puzzle);
+      setShowWinState(false);
+    }
   };
 
   if (loading) {
@@ -149,6 +160,7 @@ export function MorphGame() {
           graph={graph}
           dictionary={dictionary}
           onWin={handleWin}
+          onShuffle={handleShuffle}
         />
 
         {/* Share card (shown after win) */}

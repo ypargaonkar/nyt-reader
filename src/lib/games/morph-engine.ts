@@ -3,19 +3,32 @@
 export type WordGraph = Map<string, string[]>;
 
 /**
- * Build an adjacency graph where words differing by exactly 1 letter are neighbors.
- * Uses a pattern index for efficiency: "cold" → ["_old", "c_ld", "co_d", "col_"]
+ * Get the sorted letter signature of a word (for multiset comparison).
+ */
+function sortedLetters(word: string): string {
+  return word.split("").sort().join("");
+}
+
+/**
+ * Build an adjacency graph where words are neighbors if their letter
+ * multisets differ by exactly one substitution (one letter removed, one
+ * letter added). This allows free rearrangement of letter positions.
+ *
+ * Uses a signature index: for "calm" (sorted "aclm"), generate signatures
+ * by removing each letter: "_clm", "a_lm", "ac_m", "acl_". Words sharing
+ * a reduced signature are neighbors (they share all but one letter).
  */
 export function buildGraph(words: string[]): WordGraph {
-  const patternMap = new Map<string, string[]>();
+  const sigMap = new Map<string, string[]>();
 
   for (const word of words) {
-    for (let i = 0; i < word.length; i++) {
-      const pattern = word.slice(0, i) + "_" + word.slice(i + 1);
-      if (!patternMap.has(pattern)) {
-        patternMap.set(pattern, []);
+    const sorted = sortedLetters(word);
+    for (let i = 0; i < sorted.length; i++) {
+      const sig = sorted.slice(0, i) + "_" + sorted.slice(i + 1);
+      if (!sigMap.has(sig)) {
+        sigMap.set(sig, []);
       }
-      patternMap.get(pattern)!.push(word);
+      sigMap.get(sig)!.push(word);
     }
   }
 
@@ -24,13 +37,24 @@ export function buildGraph(words: string[]): WordGraph {
     graph.set(word, []);
   }
 
-  for (const neighbors of patternMap.values()) {
-    for (let i = 0; i < neighbors.length; i++) {
-      for (let j = i + 1; j < neighbors.length; j++) {
-        graph.get(neighbors[i])!.push(neighbors[j]);
-        graph.get(neighbors[j])!.push(neighbors[i]);
+  // Words sharing a reduced signature differ by exactly one letter (multiset).
+  // But we must exclude pairs that are pure anagrams (same multiset, 0 changes).
+  for (const group of sigMap.values()) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        const a = group[i];
+        const b = group[j];
+        // Skip if same sorted letters (pure anagram, not a valid move)
+        if (sortedLetters(a) === sortedLetters(b)) continue;
+        graph.get(a)!.push(b);
+        graph.get(b)!.push(a);
       }
     }
+  }
+
+  // Deduplicate neighbor lists
+  for (const [word, neighbors] of graph) {
+    graph.set(word, [...new Set(neighbors)]);
   }
 
   return graph;
@@ -101,7 +125,25 @@ export function getDistance(
 }
 
 /**
- * Check if a move is valid: exactly 1 letter differs and the word is in the dictionary.
+ * Count letter frequencies in a word.
+ */
+function letterCounts(word: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const ch of word) {
+    counts.set(ch, (counts.get(ch) || 0) + 1);
+  }
+  return counts;
+}
+
+/**
+ * Check if a move is valid: the letter multisets differ by exactly one
+ * substitution (one letter removed, one letter added). Letters may be
+ * freely rearranged between positions.
+ *
+ * Examples:
+ *   COLD → COLA  (D removed, A added — valid)
+ *   COLA → CALM  (O removed, M added, positions rearranged — valid)
+ *   COLD → CALM  (O→A and D→M — two changes — invalid)
  */
 export function isValidMove(
   prev: string,
@@ -116,16 +158,27 @@ export function isValidMove(
     return { valid: false, reason: "Not in dictionary" };
   }
 
-  let diffCount = 0;
-  for (let i = 0; i < prev.length; i++) {
-    if (prev[i] !== next[i]) diffCount++;
+  const prevCounts = letterCounts(prev);
+  const nextCounts = letterCounts(next);
+
+  // Count letters added and removed between the two multisets
+  let added = 0;
+  let removed = 0;
+
+  const allLetters = new Set([...prevCounts.keys(), ...nextCounts.keys()]);
+  for (const ch of allLetters) {
+    const pCount = prevCounts.get(ch) || 0;
+    const nCount = nextCounts.get(ch) || 0;
+    if (nCount > pCount) added += nCount - pCount;
+    if (pCount > nCount) removed += pCount - nCount;
   }
 
-  if (diffCount === 0) {
+  if (added === 0 && removed === 0) {
+    // Pure anagram with no letter change — not allowed
     return { valid: false, reason: "Must change at least one letter" };
   }
 
-  if (diffCount > 1) {
+  if (added !== 1 || removed !== 1) {
     return { valid: false, reason: "Change only one letter at a time" };
   }
 
@@ -169,6 +222,33 @@ export function getDistanceEmoji(distance: number): string {
   if (distance === 4) return "🟪";
   if (distance === 5) return "🟦";
   return "🟦";
+}
+
+/**
+ * Generate a random puzzle from the graph. Picks two random words with
+ * a BFS distance between minPar and maxPar.
+ */
+export function generateRandomPuzzle(
+  words: string[],
+  graph: WordGraph,
+  minPar: number = 3,
+  maxPar: number = 7
+): { start: string; target: string; par: number } | null {
+  const maxAttempts = 200;
+  for (let i = 0; i < maxAttempts; i++) {
+    const startIdx = Math.floor(Math.random() * words.length);
+    const targetIdx = Math.floor(Math.random() * words.length);
+    if (startIdx === targetIdx) continue;
+
+    const start = words[startIdx];
+    const target = words[targetIdx];
+    const path = findShortestPath(start, target, graph);
+
+    if (path && path.length - 1 >= minPar && path.length - 1 <= maxPar) {
+      return { start, target, par: path.length - 1 };
+    }
+  }
+  return null;
 }
 
 /**

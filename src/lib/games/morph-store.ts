@@ -35,6 +35,7 @@ interface MorphGameState {
   winGame: () => void;
   giveUp: () => void;
   resetGame: () => void;
+  shufflePuzzle: (puzzle: { start: string; target: string; par: number }) => void;
 }
 
 const defaultStats: MorphStats = {
@@ -194,6 +195,23 @@ export const useMorphStore = create<MorphGameState>()(
         if (!state.currentPuzzle) return;
         set({
           chain: [state.currentPuzzle.start],
+          gameStatus: "playing",
+          hintsUsed: 0,
+          startTime: Date.now(),
+          endTime: null,
+        });
+      },
+
+      shufflePuzzle: (puzzle) => {
+        set({
+          currentPuzzle: {
+            date: "shuffle",
+            start: puzzle.start,
+            target: puzzle.target,
+            par: puzzle.par,
+            theme: "Random",
+          },
+          chain: [puzzle.start],
           gameStatus: "playing",
           hintsUsed: 0,
           startTime: Date.now(),

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Undo2, Lightbulb, Flag, RotateCcw } from "lucide-react";
+import { Undo2, Lightbulb, Flag, RotateCcw, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMorphStore } from "@/lib/games/morph-store";
 import {
@@ -19,9 +19,10 @@ interface MorphBoardProps {
   graph: WordGraph;
   dictionary: Set<string>;
   onWin: () => void;
+  onShuffle?: () => void;
 }
 
-export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
+export function MorphBoard({ graph, dictionary, onWin, onShuffle }: MorphBoardProps) {
   const {
     currentPuzzle,
     chain,
@@ -36,20 +37,20 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
   } = useMorphStore();
 
   const [input, setInput] = useState(["", "", "", ""]);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shaking, setShaking] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Focus first empty input on mount and after each move
+  const lastWord = chain[chain.length - 1];
+
+  // Pre-fill input from the last word whenever the chain changes
   useEffect(() => {
-    if (gameStatus === "playing") {
-      const firstEmpty = input.findIndex((l) => l === "");
-      const idx = firstEmpty >= 0 ? firstEmpty : 0;
-      inputRefs.current[idx]?.focus();
+    if (gameStatus === "playing" && lastWord) {
+      setInput(lastWord.split(""));
+      setActiveIndex(null);
     }
   }, [chain.length, gameStatus]);
-
-  const lastWord = chain[chain.length - 1];
 
   const triggerShake = (msg: string) => {
     setError(msg);
@@ -62,8 +63,13 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
     if (!currentPuzzle || gameStatus !== "playing") return;
 
     const word = input.join("").toLowerCase();
-    if (word.length !== 4) {
-      triggerShake("Enter a 4-letter word");
+    if (word.length !== 4 || input.some((l) => !l)) {
+      triggerShake("Fill in all 4 letters");
+      return;
+    }
+
+    if (word === lastWord) {
+      triggerShake("Change one letter");
       return;
     }
 
@@ -74,8 +80,8 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
     }
 
     addWord(word);
-    setInput(["", "", "", ""]);
     setError(null);
+    setActiveIndex(null);
 
     // Check win
     if (word === currentPuzzle.target) {
@@ -84,30 +90,73 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
     }
   }, [input, lastWord, currentPuzzle, gameStatus, dictionary, addWord, winGame, onWin]);
 
+  const handleLetterClick = (index: number) => {
+    if (gameStatus !== "playing") return;
+    setActiveIndex(index);
+    // Clear the letter at this position to indicate editing
+    const newInput = lastWord.split("");
+    newInput[index] = "";
+    setInput(newInput);
+    setTimeout(() => inputRefs.current[index]?.focus(), 0);
+  };
+
   const handleInputChange = (index: number, value: string) => {
     if (gameStatus !== "playing") return;
     const letter = value.slice(-1).toLowerCase();
     if (letter && !/^[a-z]$/.test(letter)) return;
 
     const newInput = [...input];
-    newInput[index] = letter;
+    newInput[index] = letter || "";
     setInput(newInput);
 
-    // Auto-advance to next input
-    if (letter && index < 3) {
-      inputRefs.current[index + 1]?.focus();
+    // Auto-submit if a letter was typed and all positions are filled
+    if (letter) {
+      const candidate = newInput.join("").toLowerCase();
+      if (candidate.length === 4 && newInput.every((l) => l)) {
+        // Small delay so the user sees the letter appear
+        setTimeout(() => {
+          if (candidate === lastWord) {
+            triggerShake("Change one letter");
+            return;
+          }
+          const result = isValidMove(lastWord, candidate, dictionary);
+          if (!result.valid) {
+            triggerShake(result.reason || "Invalid move");
+            return;
+          }
+          addWord(candidate);
+          setError(null);
+          setActiveIndex(null);
+          if (currentPuzzle && candidate === currentPuzzle.target) {
+            winGame();
+            onWin();
+          }
+        }, 100);
+      }
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !input[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace") {
+      // Reset this position to the original letter
       const newInput = [...input];
-      newInput[index - 1] = "";
+      newInput[index] = "";
       setInput(newInput);
+    }
+    if (e.key === "Escape") {
+      // Cancel editing, restore from lastWord
+      setInput(lastWord.split(""));
+      setActiveIndex(null);
+      inputRefs.current[index]?.blur();
     }
     if (e.key === "Enter") {
       handleSubmit();
+    }
+    if (e.key === "ArrowLeft" && index > 0) {
+      handleLetterClick(index - 1);
+    }
+    if (e.key === "ArrowRight" && index < 3) {
+      handleLetterClick(index + 1);
     }
   };
 
@@ -117,7 +166,7 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
     if (path && path.length > 1) {
       const nextWord = path[1];
       useHintWord(nextWord);
-      setInput(["", "", "", ""]);
+      setActiveIndex(null);
 
       if (nextWord === currentPuzzle.target) {
         winGame();
@@ -129,7 +178,7 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
   const handleUndo = () => {
     if (chain.length <= 1 || gameStatus !== "playing") return;
     undoLastWord();
-    setInput(["", "", "", ""]);
+    setActiveIndex(null);
   };
 
   if (!currentPuzzle) return null;
@@ -199,35 +248,65 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
           );
         })}
 
-        {/* Active input row */}
+        {/* Active input row — pre-filled from last word, tap any letter to change it */}
         {gameStatus === "playing" && (
           <div className="flex items-center gap-2 w-full justify-center">
             <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 shrink-0" />
             <div className={cn("flex gap-1", shaking && "animate-shake")}>
-              {input.map((letter, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
-                  type="text"
-                  inputMode="text"
-                  autoCapitalize="none"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  value={letter}
-                  onChange={(e) => handleInputChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  className={cn(
-                    "w-10 h-10 text-center rounded-md font-mono text-lg font-bold uppercase",
-                    "bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600",
-                    "focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none",
-                    "transition-colors"
-                  )}
-                  maxLength={1}
-                />
-              ))}
+              {input.map((letter, i) => {
+                const isEditing = activeIndex === i;
+                const isUnchanged = letter === lastWord[i];
+                return isEditing ? (
+                  <input
+                    key={i}
+                    ref={(el) => { inputRefs.current[i] = el; }}
+                    type="text"
+                    inputMode="text"
+                    autoCapitalize="none"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    value={letter}
+                    onChange={(e) => handleInputChange(i, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(i, e)}
+                    onBlur={() => {
+                      // Restore original letter if left empty
+                      if (!input[i]) {
+                        const restored = [...input];
+                        restored[i] = lastWord[i];
+                        setInput(restored);
+                      }
+                      setActiveIndex(null);
+                    }}
+                    className={cn(
+                      "w-10 h-10 text-center rounded-md font-mono text-lg font-bold uppercase",
+                      "bg-white dark:bg-gray-900 border-2 border-blue-500 dark:border-blue-400",
+                      "focus:outline-none ring-2 ring-blue-300 dark:ring-blue-600",
+                      "transition-colors"
+                    )}
+                    maxLength={1}
+                  />
+                ) : (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleLetterClick(i)}
+                    className={cn(
+                      "w-10 h-10 flex items-center justify-center rounded-md font-mono text-lg font-bold uppercase",
+                      "transition-all cursor-pointer",
+                      isUnchanged
+                        ? "bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:border-blue-400 dark:hover:border-blue-500"
+                        : "bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-400 dark:border-purple-500 text-purple-700 dark:text-purple-300"
+                    )}
+                  >
+                    {letter}
+                  </button>
+                );
+              })}
             </div>
-            <span className="text-xs text-gray-400 w-12 shrink-0" />
+            <span className="text-xs text-gray-400 w-12 shrink-0">
+              {activeIndex !== null ? "TAP" : ""}
+            </span>
           </div>
         )}
 
@@ -319,15 +398,28 @@ export function MorphBoard({ graph, dictionary, onWin }: MorphBoardProps) {
             </Button>
           </>
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetGame}
-            className="flex-1"
-          >
-            <RotateCcw className="mr-1.5 h-4 w-4" />
-            Play Again
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetGame}
+              className="flex-1"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" />
+              Play Again
+            </Button>
+            {onShuffle && gameStatus === "won" && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={onShuffle}
+                className="flex-1"
+              >
+                <Shuffle className="mr-1.5 h-4 w-4" />
+                New Puzzle
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>
