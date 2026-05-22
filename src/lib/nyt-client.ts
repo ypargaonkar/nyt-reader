@@ -625,25 +625,185 @@ const EXCLUDED_SECTIONS = new Set([
   "games",
 ]);
 
-/**
- * MASTER FETCH - Fetches ALL articles in one go
- * This is the main function to call - fetches everything and caches it
- * Returns ~200-300 articles from multiple sources
- */
-export async function fetchAllArticles(apiKey: string): Promise<Article[]> {
-  // Fetch from Times Wire (up to 500 recent articles) - 1 API call
-  // This gets articles from ALL sections
-  const wireArticles = await fetchTimesWire("nyt", "all", 500, apiKey);
+// ─── Times Wire RSS Feed (replaced Times Newswire API, decommissioned 5/21/2026) ───
 
-  // Deduplicate by URI and filter out excluded sections
-  const articleMap = new Map<string, Article>();
-  wireArticles.forEach((article) => {
-    const sectionLower = article.section.toLowerCase();
-    if (!articleMap.has(article.uri) && !EXCLUDED_SECTIONS.has(sectionLower)) {
-      articleMap.set(article.uri, article);
+const NYT_RSS_BASE = "https://rss.nytimes.com/services/xml/rss/nyt";
+
+// Each entry maps an RSS filename to the app section name used in SECTION_FILTERS.
+// HomePage articles derive their section from the article URL instead.
+const RSS_FEED_SECTIONS = [
+  { feed: "HomePage",  section: "" },       // section derived from URL
+  { feed: "World",     section: "world" },
+  { feed: "US",        section: "us" },
+  { feed: "Politics",  section: "politics" },
+  { feed: "Technology",section: "technology" },
+  { feed: "Science",   section: "science" },
+  { feed: "Climate",   section: "climate" },
+  { feed: "Business",  section: "business" },
+  { feed: "Arts",      section: "arts" },
+  { feed: "Sports",    section: "sports" },
+  { feed: "Health",    section: "health" },
+  { feed: "Opinion",   section: "opinion" },
+] as const;
+
+// Extract the top-level section from a NYT article URL:
+// https://www.nytimes.com/2026/05/21/world/europe/... → "world"
+function sectionFromNYTUrl(url: string): string {
+  const m = url.match(/nytimes\.com\/\d{4}\/\d{2}\/\d{2}\/([^/?#]+)/);
+  return m ? m[1].toLowerCase() : "";
+}
+
+// Extract text content of an XML tag, unwrapping CDATA and decoding entities.
+function xmlText(xml: string, tag: string): string {
+  const t = tag.replace(/:/g, "\\:");
+  const re = new RegExp(
+    `<${t}(?:[^>]*)>\\s*(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?\\s*<\\/${t}>`,
+    "i"
+  );
+  const m = xml.match(re);
+  if (!m) return "";
+  return m[1]
+    .trim()
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)));
+}
+
+// Parse one RSS <item> block into an Article.
+function parseRSSItem(itemXml: string, feedSection: string): Article | null {
+  const title = xmlText(itemXml, "title");
+  const link  = xmlText(itemXml, "link") || xmlText(itemXml, "guid");
+  if (!title || !link) return null;
+
+  const section  = sectionFromNYTUrl(link) || feedSection;
+  const abstract = xmlText(itemXml, "description");
+  const pubStr   = xmlText(itemXml, "pubDate");
+  const creator  = xmlText(itemXml, "dc:creator");
+
+  // Pick the largest image across all media:content elements.
+  let imageUrl: string | null = null;
+  let imageCaption: string | null = null;
+  let maxPixels = 0;
+
+  const mediaRe = /<media:content([^>]*?)(?:\/>|>([\s\S]*?)<\/media:content>)/gi;
+  let mm;
+  while ((mm = mediaRe.exec(itemXml)) !== null) {
+    const attrs = mm[1];
+    const inner = mm[2] || "";
+    const url   = (attrs.match(/url="([^"]*)"/) || [])[1] || "";
+    const w     = parseInt((attrs.match(/width="(\d+)"/)  || [])[1] || "0", 10);
+    const h     = parseInt((attrs.match(/height="(\d+)"/) || [])[1] || "0", 10);
+    if (url && w * h > maxPixels) {
+      maxPixels    = w * h;
+      imageUrl     = getHighResImageUrl(url);
+      imageCaption = xmlText(inner, "media:description") || null;
     }
-  });
+  }
 
+  // Collect facets from <category domain="..."> elements.
+  const keywords: string[]      = [];
+  const people: string[]        = [];
+  const organizations: string[] = [];
+  const locations: string[]     = [];
+
+  const catRe = /<category[^>]*domain="([^"]*)"[^>]*>(?:<!\[CDATA\[)?([^<]*?)(?:\]\]>)?<\/category>/gi;
+  let cm;
+  while ((cm = catRe.exec(itemXml)) !== null) {
+    const domain = cm[1];
+    const value  = cm[2].trim();
+    if (!value) continue;
+    if (domain.includes("keywords/des"))                                   keywords.push(value);
+    else if (domain.includes("nyt_per") || domain.includes("per_facet")) people.push(value);
+    else if (domain.includes("nyt_org") || domain.includes("org_facet")) organizations.push(value);
+    else if (domain.includes("nyt_geo") || domain.includes("geo_facet")) locations.push(value);
+  }
+
+  // Live-blog detection (reuse same patterns as normalizeArticle).
+  const norm = title.replace(/[‘’]/g, "'").toLowerCase();
+  const isLiveBlog =
+    norm.includes("live update") ||
+    norm.includes("here's the latest") ||
+    norm.includes("heres the latest") ||
+    norm.includes("what we know") ||
+    norm.includes("what to know");
+
+  // Content-type detection from URL.
+  const lowerLink = link.toLowerCase();
+  let contentType: ContentType = "text";
+  if (lowerLink.includes("/video/") || lowerLink.includes("/videos/")) {
+    contentType = "video";
+  } else if (lowerLink.includes("/podcast/") || lowerLink.includes("/podcasts/")) {
+    contentType = "audio";
+  }
+
+  const publishedDate = pubStr ? new Date(pubStr).toISOString() : new Date().toISOString();
+
+  return {
+    uri: link,
+    url: link,
+    title,
+    abstract,
+    section,
+    subsection: "",
+    byline: creator ? `By ${creator}` : "",
+    publishedDate,
+    updatedDate: publishedDate,
+    imageUrl,
+    imageCaption,
+    keywords,
+    people,
+    organizations,
+    locations,
+    materialType: "Article",
+    wordCount: 0,
+    hasMultimedia: !!imageUrl,
+    isInteractive: false,
+    isLiveBlog,
+    contentType,
+    desk: "",
+    source: "The New York Times",
+  };
+}
+
+// Fetch and parse a single NYT RSS feed section.
+async function fetchRSSSection(feed: string, section: string): Promise<Article[]> {
+  const response = await fetch(`${NYT_RSS_BASE}/${feed}.xml`);
+  if (!response.ok) throw new Error(`RSS ${feed}: ${response.status}`);
+
+  const xml      = await response.text();
+  const articles: Article[] = [];
+  const itemRe   = /<item>([\s\S]*?)<\/item>/gi;
+  let m;
+  while ((m = itemRe.exec(xml)) !== null) {
+    const article = parseRSSItem(m[1], section);
+    if (article) articles.push(article);
+  }
+  return articles;
+}
+
+/**
+ * MASTER FETCH — fetches all RSS sections in parallel (no API quota used).
+ * apiKey is accepted but unused; RSS feeds are public.
+ */
+export async function fetchAllArticles(_apiKey: string): Promise<Article[]> {
+  const results = await Promise.allSettled(
+    RSS_FEED_SECTIONS.map(({ feed, section }) => fetchRSSSection(feed, section))
+  );
+
+  const articleMap = new Map<string, Article>();
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      for (const article of result.value) {
+        const sectionLower = article.section.toLowerCase();
+        if (!articleMap.has(article.uri) && !EXCLUDED_SECTIONS.has(sectionLower)) {
+          articleMap.set(article.uri, article);
+        }
+      }
+    }
+  }
   return Array.from(articleMap.values());
 }
 
@@ -662,39 +822,27 @@ export function filterArticlesBySection(
 }
 
 /**
- * Fetch with optional top stories for home page
- * Uses 2-3 API calls max but gets comprehensive coverage
+ * Fetch all RSS sections in parallel and return deduplicated articles.
+ * apiKey is accepted for interface compatibility but RSS feeds are public.
  */
-export async function fetchComprehensiveFeed(apiKey: string): Promise<Article[]> {
-  // Parallel fetch: Times Wire (all recent) + Top Stories (editorial picks)
-  const [wireArticles, topStories] = await Promise.all([
-    fetchTimesWire("nyt", "all", 500, apiKey),
-    fetchTopStories("home", apiKey),
-  ]);
+export async function fetchComprehensiveFeed(_apiKey: string): Promise<Article[]> {
+  const results = await Promise.allSettled(
+    RSS_FEED_SECTIONS.map(({ feed, section }) => fetchRSSSection(feed, section))
+  );
 
-  // Deduplicate, preferring top stories (they have editorial priority)
   const articleMap = new Map<string, Article>();
-
-  // Add top stories first (higher priority)
-  topStories.forEach((article) => {
-    const sectionLower = article.section.toLowerCase();
-    // Filter out old live blogs and excluded sections
-    if (!isOldLiveBlog(article) && !EXCLUDED_SECTIONS.has(sectionLower)) {
-      articleMap.set(article.uri, article);
-    }
-  });
-
-  // Add wire articles (fills in the rest)
-  wireArticles.forEach((article) => {
-    const sectionLower = article.section.toLowerCase();
-    if (!articleMap.has(article.uri)) {
-      // Filter out old live blogs and excluded sections
-      if (!isOldLiveBlog(article) && !EXCLUDED_SECTIONS.has(sectionLower)) {
-        articleMap.set(article.uri, article);
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      for (const article of result.value) {
+        const sectionLower = article.section.toLowerCase();
+        if (!isOldLiveBlog(article) && !EXCLUDED_SECTIONS.has(sectionLower)) {
+          if (!articleMap.has(article.uri)) {
+            articleMap.set(article.uri, article);
+          }
+        }
       }
     }
-  });
-
+  }
   return Array.from(articleMap.values());
 }
 

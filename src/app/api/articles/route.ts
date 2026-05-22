@@ -80,12 +80,10 @@ export async function GET(request: NextRequest) {
 
         // Record API calls and cache
         if (useCloud) {
-          await recordApiCallCloud("timeswire");
-          await recordApiCallCloud("topstories");
+          await recordApiCallCloud("rss-refresh");
           await cacheArticlesCloud(allArticles);
         } else {
-          recordApiCall("timeswire");
-          recordApiCall("topstories");
+          recordApiCall("rss-refresh");
           cacheArticles(allArticles);
         }
       }
